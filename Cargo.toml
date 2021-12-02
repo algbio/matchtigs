@@ -1,0 +1,40 @@
+[package]
+name = "matchtigs"
+version = "1.0.0"
+authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
+description = "Different algorithms for computing small and minimum plain text representations of kmer sets."
+keywords = ["compression", "plain text", "kmer", "genome", "bio"]
+categories = ["algorithms", "compression", "command-line-utilities", "science"]
+readme = "README.md"
+documentation = "https://docs.rs/matchtigs"
+homepage = "https://github.com/algbio/matchtigs"
+repository = "https://github.com/algbio/matchtigs"
+edition = "2021"
+rust-version = "1.56.1"
+license-file = "LICENSE.txt"
+
+[lib]
+name = "libmatchtigs"
+crate-type = ["dylib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "matchtigs"
+path = "src/bin.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+lto = true
+debug = true
+
+[dependencies]
+genome-graph = "0.4"
+log = "0.4"
+simplelog = "0.11"
+clap = "3.0.0-beta.5"
+itertools = "0.10"
+atomic-counter = "1"
+disjoint-sets = "0.4"
+permutation = "0.2"
+crossbeam = "0.8"
