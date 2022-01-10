@@ -43,4 +43,6 @@ matchtigs --help
 
 ## Citation
 
-to be added
+**preprint**
+
+Schmidt, S., Khan, S., Alanko, J., & Tomescu, A. I. (2021). Matchtigs: minimum plain text representation of kmer sets. _bioRxiv_. [https://doi.org/10.1101/2021.12.15.472871](https://doi.org/10.1101/2021.12.15.472871).
