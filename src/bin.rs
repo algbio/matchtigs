@@ -31,6 +31,8 @@ use std::path::Path;
 
 #[macro_use]
 extern crate log;
+//#[macro_use]
+//extern crate clap;
 
 mod implementation;
 
@@ -413,7 +415,7 @@ fn main() {
     let mut sequence_store = DefaultSequenceStore::default();
 
     let (mut graph, k, gfa_header): (CliGraph<_>, _, _) = if let Some(gfa_in) = &opts.gfa_in {
-        info!("Reading gfa as edge centric bigraph from {:?}", &gfa_in);
+        info!("Reading gfa as edge centric bigraph from {gfa_in:?}");
         let (graph, gfa_read_file_properties) =
             read_gfa_as_edge_centric_bigraph_from_file(&gfa_in, &mut sequence_store, false)
                 .unwrap();
@@ -426,10 +428,7 @@ fn main() {
         (graph, k, Some(gfa_header))
     } else if let Some(fa_in) = &opts.fa_in {
         let k = opts.k.unwrap();
-        info!(
-            "Reading fa as edge centric bigraph with k = {} from {:?}",
-            k, &fa_in
-        );
+        info!("Reading fa as edge centric bigraph with k = {k} from {fa_in:?}");
         let graph =
             read_bigraph_from_fasta_as_edge_centric_from_file(&fa_in, &mut sequence_store, k)
                 .unwrap();
@@ -439,11 +438,9 @@ fn main() {
     };
 
     let unitigs_size_in_memory = sequence_store.size_in_memory();
-    info!(
-        "The sequences take a total {}MiB of memory",
-        unitigs_size_in_memory / (1024 * 1024)
-    );
-    info!("k = {}", k);
+    let unitigs_size_in_memory_mib = unitigs_size_in_memory / (1024 * 1024);
+    info!("The sequences take a total {unitigs_size_in_memory_mib}MiB of memory");
+    info!("k = {k}");
     info!(
         "Graph has {} nodes and {} edges",
         graph.node_count(),
@@ -461,12 +458,12 @@ fn main() {
         let pathtigs = compute_pathtigs(&graph);
 
         if let Some(fa_out) = &opts.pathtigs_fa_out {
-            info!("Writing pathtigs as fasta to {:?}", fa_out);
+            info!("Writing pathtigs as fasta to {fa_out:?}");
             write_walks_as_fasta_file(&graph, &sequence_store, k, &pathtigs, fa_out).unwrap();
         }
 
         if let Some(gfa_out) = &opts.pathtigs_gfa_out {
-            info!("Writing pathtigs as gfa to {:?}", gfa_out);
+            info!("Writing pathtigs as gfa to {gfa_out:?}");
             write_walks_gfa(
                 &graph,
                 &pathtigs,
@@ -491,12 +488,12 @@ fn main() {
         let greedytigs = compute_greedytigs(&mut graph, opts.threads, k);
 
         if let Some(fa_out) = &opts.greedytigs_fa_out {
-            info!("Writing greedytigs as fasta to {:?}", fa_out);
+            info!("Writing greedytigs as fasta to {fa_out:?}");
             write_walks_as_fasta_file(&graph, &sequence_store, k, &greedytigs, fa_out).unwrap();
         }
 
         if let Some(gfa_out) = &opts.greedytigs_gfa_out {
-            info!("Writing greedytigs as gfa to {:?}", gfa_out);
+            info!("Writing greedytigs as gfa to {gfa_out:?}");
             write_walks_gfa(
                 &graph,
                 &greedytigs,
@@ -523,12 +520,12 @@ fn main() {
         );
 
         if let Some(fa_out) = &opts.matchtigs_fa_out {
-            info!("Writing matchtigs as fasta to {:?}", fa_out);
+            info!("Writing matchtigs as fasta to {fa_out:?}");
             write_walks_as_fasta_file(&graph, &sequence_store, k, &matchtigs, fa_out).unwrap();
         }
 
         if let Some(gfa_out) = &opts.matchtigs_gfa_out {
-            info!("Writing matchtigs as gfa to {:?}", gfa_out);
+            info!("Writing matchtigs as gfa to {gfa_out:?}");
             write_walks_gfa(
                 &graph,
                 &matchtigs,
