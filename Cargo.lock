@@ -81,9 +81,9 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.4.5"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c212ce9e3bcbf0b3041d0cfef893ff422deaaff7ab05e2e7f4747eeaa16054a3"
+checksum = "9fe25d5617f1794dbc50ed702102b2b03fca05ff7c9f295d8c2c9f3063f60292"
 dependencies = [
  "bitvector",
  "num-traits",
@@ -95,9 +95,9 @@ dependencies = [
 
 [[package]]
 name = "bio"
-version = "0.37.1"
+version = "0.39.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2788488d71db156b2ed53d2114a84b333a4ad38e855bff3f151d536b2670d08d"
+checksum = "d3329369d05dbe037f695c7a7640c30bb970e9e6b21f62bd1d8331e35cc419da"
 dependencies = [
  "anyhow",
  "approx",
@@ -108,10 +108,9 @@ dependencies = [
  "csv",
  "custom_derive",
  "enum-map",
- "fnv",
  "fxhash",
  "getset",
- "itertools 0.10.3",
+ "itertools",
  "itertools-num",
  "lazy_static",
  "multimap",
@@ -121,13 +120,13 @@ dependencies = [
  "num-traits",
  "ordered-float",
  "petgraph",
- "rand 0.8.4",
+ "rand",
  "regex",
  "serde",
  "serde_derive",
  "statrs",
  "strum 0.21.0",
- "strum_macros 0.21.1",
+ "strum_macros 0.23.1",
  "thiserror",
  "triple_accel",
  "vec_map",
@@ -276,12 +275,12 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.4.10"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35b8a9db6a72ae36c6a8f39a2e85eb81280d3151dd9aeea11755226ecc02a318"
+checksum = "1fb7b0e93030a2c278703f84df4179dbb3a28910b4d00241590ef2b8478904a3"
 dependencies = [
  "bitvec",
- "itertools 0.9.0",
+ "itertools",
  "ref-cast",
  "traitsequence",
 ]
@@ -448,12 +447,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 
 [[package]]
-name = "fnv"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
 name = "funty"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -470,9 +463,9 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.4.9"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d272bc56bb088c2e782e6b7133f8a17009a559bb3804754bb7d89158156bd0b6"
+checksum = "cea3cee12023a1c18f673618b59d4ecf9f963d54ab255a8fe644935583d10571"
 dependencies = [
  "anyhow",
  "bigraph",
@@ -482,17 +475,7 @@ dependencies = [
  "log",
  "num-traits",
  "regex",
-]
-
-[[package]]
-name = "getrandom"
-version = "0.1.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
-dependencies = [
- "cfg-if",
- "libc",
- "wasi 0.9.0+wasi-snapshot-preview1",
+ "traitgraph-algo",
 ]
 
 [[package]]
@@ -503,7 +486,7 @@ checksum = "418d37c8b1d42553c93648be529cb70f920d3baf8ef469b74b9638df426e0b4c"
 dependencies = [
  "cfg-if",
  "libc",
- "wasi 0.10.2+wasi-snapshot-preview1",
+ "wasi",
 ]
 
 [[package]]
@@ -566,15 +549,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
@@ -633,10 +607,11 @@ dependencies = [
  "crossbeam",
  "disjoint-sets",
  "genome-graph",
- "itertools 0.10.3",
+ "itertools",
  "log",
  "permutation",
  "simplelog",
+ "traitgraph-algo",
 ]
 
 [[package]]
@@ -694,7 +669,7 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
- "rand 0.8.4",
+ "rand",
  "rand_distr",
  "simba",
  "typenum",
@@ -828,9 +803,9 @@ checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
 
 [[package]]
 name = "permutation"
-version = "0.2.5"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9978962f8a4b158e97447a6d09d2d75e206d2994eff056c894019f362b27142"
+checksum = "f3f4a387a9ad6165bb590820827ef047d8e2921dfb9821891ed0ef2b7cf82774"
 
 [[package]]
 name = "petgraph"
@@ -916,37 +891,14 @@ checksum = "643f8f41a8ebc4c5dc4515c82bb8abd397b527fc20fd681b7c011c2aee5d44fb"
 
 [[package]]
 name = "rand"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a6b1679d49b24bbfe0c803429aa1874472f50d9b363131f0e89fc356b544d03"
-dependencies = [
- "getrandom 0.1.16",
- "libc",
- "rand_chacha 0.2.2",
- "rand_core 0.5.1",
- "rand_hc 0.2.0",
-]
-
-[[package]]
-name = "rand"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e7573632e6454cf6b99d7aac4ccca54be06da05aca2ef7423d22d27d4d4bcd8"
 dependencies = [
  "libc",
- "rand_chacha 0.3.1",
- "rand_core 0.6.3",
- "rand_hc 0.3.1",
-]
-
-[[package]]
-name = "rand_chacha"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4c8ed856279c9737206bf725bf36935d8666ead7aa69b52be55af369d193402"
-dependencies = [
- "ppv-lite86",
- "rand_core 0.5.1",
+ "rand_chacha",
+ "rand_core",
+ "rand_hc",
 ]
 
 [[package]]
@@ -956,16 +908,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "rand_core"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19"
-dependencies = [
- "getrandom 0.1.16",
+ "rand_core",
 ]
 
 [[package]]
@@ -974,7 +917,7 @@ version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
 dependencies = [
- "getrandom 0.2.4",
+ "getrandom",
 ]
 
 [[package]]
@@ -984,16 +927,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32cb0b9bc82b0a0876c2dd994a7e7a2683d3e7390ca40e6886785ef0c7e3ee31"
 dependencies = [
  "num-traits",
- "rand 0.8.4",
-]
-
-[[package]]
-name = "rand_hc"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
-dependencies = [
- "rand_core 0.5.1",
+ "rand",
 ]
 
 [[package]]
@@ -1002,7 +936,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
 dependencies = [
- "rand_core 0.6.3",
+ "rand_core",
 ]
 
 [[package]]
@@ -1146,7 +1080,7 @@ dependencies = [
  "lazy_static",
  "nalgebra",
  "num-traits",
- "rand 0.8.4",
+ "rand",
 ]
 
 [[package]]
@@ -1177,18 +1111,6 @@ dependencies = [
  "proc-macro2 0.4.30",
  "quote 0.6.13",
  "syn 0.15.44",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d06aaeeee809dbc59eb4556183dd927df67db1540de5be8d3ec0b6636358a5ec"
-dependencies = [
- "heck 0.3.3",
- "proc-macro2 1.0.36",
- "quote 1.0.15",
- "syn 1.0.86",
 ]
 
 [[package]]
@@ -1279,22 +1201,31 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.4.10"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "372d4e5f592ba7743a0949dc32395d97225ad650184ebae280ba194edb5a1ecc"
+checksum = "b099a500945e8d085a7ba108c3a560b3f2208d7def5601ff5cdaa345219eabf8"
 dependencies = [
  "bitvector",
  "num-traits",
  "petgraph",
- "rand 0.7.3",
  "traitsequence",
 ]
 
 [[package]]
-name = "traitsequence"
-version = "0.4.2"
+name = "traitgraph-algo"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f019699e2ee5839e9818b284932a5c3e0562e355f84e97fc31d7991bfbd00e28"
+checksum = "b7d0e4afe169ea94b213c4954f8f93836496855486c2d51b69a7c49ebce3a70b"
+dependencies = [
+ "rand",
+ "traitgraph",
+]
+
+[[package]]
+name = "traitsequence"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fc72819501e9c4430514249c67906b22235a0eb2ab30bf4ffebfdd69f32df3f"
 
 [[package]]
 name = "triple_accel"
@@ -1340,12 +1271,6 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "wasi"
-version = "0.9.0+wasi-snapshot-preview1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
 
 [[package]]
 name = "wasi"

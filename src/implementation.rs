@@ -14,9 +14,6 @@ use genome_graph::bigraph::interface::dynamic_bigraph::DynamicEdgeCentricBigraph
 use genome_graph::bigraph::interface::static_bigraph::StaticBigraph;
 use genome_graph::bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
 use genome_graph::bigraph::interface::BidirectedData;
-use genome_graph::bigraph::traitgraph::algo::dijkstra::{
-    DefaultDijkstra, Dijkstra, DijkstraTargetMap, NodeWeightArray, WeightedEdgeData,
-};
 use genome_graph::bigraph::traitgraph::index::{GraphIndex, OptionalGraphIndex};
 use genome_graph::bigraph::traitgraph::interface::{GraphBase, StaticGraph};
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
@@ -32,6 +29,9 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
+use traitgraph_algo::dijkstra::{
+    DefaultDijkstra, Dijkstra, DijkstraTargetMap, DijkstraWeightedEdgeData, NodeWeightArray,
+};
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds
 
@@ -194,7 +194,9 @@ pub fn compute_pathtigs<
     pathtigs
 }
 
-pub trait MatchtigEdgeData<SequenceHandle>: WeightedEdgeData + BidirectedData {
+pub trait MatchtigEdgeData<SequenceHandle>:
+    DijkstraWeightedEdgeData<usize> + BidirectedData
+{
     fn is_dummy(&self) -> bool;
 
     fn is_original(&self) -> bool {
@@ -632,12 +634,12 @@ pub fn compute_greedytigs<
 
         #[allow(clippy::too_many_arguments)]
         fn compute_dijkstras<
-            EdgeData: WeightedEdgeData,
+            EdgeData: DijkstraWeightedEdgeData<usize>,
             Graph: StaticBigraph<EdgeData = EdgeData>,
             DijkstraNodeWeightArray: NodeWeightArray<usize>,
         >(
             graph: &Graph,
-            dijkstra: &mut Dijkstra<Graph, DijkstraNodeWeightArray>,
+            dijkstra: &mut Dijkstra<Graph, usize, DijkstraNodeWeightArray>,
             distances: &mut Vec<(Graph::NodeIndex, usize)>,
             shortest_paths: &mut Vec<(Graph::NodeIndex, Graph::NodeIndex, usize)>,
             out_nodes: &[Graph::NodeIndex],
@@ -1272,12 +1274,12 @@ pub fn compute_matchtigs<
 
             #[allow(clippy::too_many_arguments)]
             fn compute_dijkstras<
-                EdgeData: WeightedEdgeData,
+                EdgeData: DijkstraWeightedEdgeData<usize>,
                 Graph: StaticGraph<EdgeData = EdgeData>,
                 DijkstraNodeWeightArray: NodeWeightArray<usize>,
             >(
                 graph: &Graph,
-                dijkstra: &mut Dijkstra<Graph, DijkstraNodeWeightArray>,
+                dijkstra: &mut Dijkstra<Graph, usize, DijkstraNodeWeightArray>,
                 distances: &mut Vec<(Graph::NodeIndex, usize)>,
                 shortest_paths: &mut Vec<(Graph::NodeIndex, Graph::NodeIndex, usize)>,
                 out_nodes: &[Graph::NodeIndex],

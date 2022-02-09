@@ -12,7 +12,6 @@ use genome_graph::bigraph::implementation::node_bigraph_wrapper::PetBigraph;
 use genome_graph::bigraph::interface::dynamic_bigraph::DynamicBigraph;
 use genome_graph::bigraph::interface::static_bigraph::{StaticBigraph, StaticEdgeCentricBigraph};
 use genome_graph::bigraph::interface::BidirectedData;
-use genome_graph::bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use genome_graph::bigraph::traitgraph::index::GraphIndex;
 use genome_graph::bigraph::traitgraph::interface::{
     GraphBase, ImmutableGraphContainer, MutableGraphContainer,
@@ -21,6 +20,7 @@ use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::time::Instant;
+use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 type MatchtigGraph = PetBigraph<(), ExternalEdgeData>;
 
@@ -84,7 +84,7 @@ impl BidirectedData for ExternalEdgeData {
     }
 }
 
-impl WeightedEdgeData for ExternalEdgeData {
+impl DijkstraWeightedEdgeData<usize> for ExternalEdgeData {
     fn weight(&self) -> usize {
         self.weight
     }

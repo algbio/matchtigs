@@ -29,12 +29,13 @@ lto = true
 debug = true
 
 [dependencies]
-genome-graph = "0.4"
-log = "0.4"
-simplelog = "0.11"
-clap = {version = "3.0.0", features = ["derive"]}
-itertools = "0.10"
-atomic-counter = "1"
-disjoint-sets = "0.4"
-permutation = "0.2"
-crossbeam = "0.8"
+genome-graph = "0.6.0"
+traitgraph-algo = "0.6.2"
+log = "0.4.14"
+simplelog = "0.11.2"
+clap = {version = "3.0.14", features = ["derive"]}
+itertools = "0.10.3"
+atomic-counter = "1.0.1"
+disjoint-sets = "0.4.2"
+permutation = "0.4.0"
+crossbeam = "0.8.1"

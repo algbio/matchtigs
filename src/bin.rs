@@ -9,7 +9,6 @@ use crate::implementation::{
 };
 use clap::Parser;
 use genome_graph::bigraph::interface::BidirectedData;
-use genome_graph::bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use genome_graph::bigraph::traitgraph::index::GraphIndex;
 use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
 use genome_graph::bigraph::traitgraph::interface::StaticGraph;
@@ -28,6 +27,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
+use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
 extern crate log;
@@ -113,7 +113,7 @@ pub struct CliEdgeData<SequenceHandle> {
     dummy_edge_id: usize,
 }
 
-impl<SequenceHandle> WeightedEdgeData for CliEdgeData<SequenceHandle> {
+impl<SequenceHandle> DijkstraWeightedEdgeData<usize> for CliEdgeData<SequenceHandle> {
     fn weight(&self) -> usize {
         self.weight
     }
