@@ -1240,10 +1240,11 @@ dependencies = [
 
 [[package]]
 name = "traitgraph-algo"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "077c4fe1b0a506d7fd64247f620a9abea6bf35ad7a7e0f717db8c336cf85adb2"
+checksum = "70feb99e6b99b5dac4fa0ca03e0c228f7a3f7ac2f82ec9925e686eb45ff93aa7"
 dependencies = [
+ "hashbrown 0.12.0",
  "rand",
  "traitgraph",
 ]

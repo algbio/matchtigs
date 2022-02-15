@@ -71,6 +71,9 @@ pub trait TigAlgorithm<Graph: GraphBase>: Default {
 pub enum NodeWeightArrayType {
     /// Use the [EpochNodeWeightArray].
     EpochNodeWeightArray,
+
+    /// Use the [hashbrown::HashMap] to store node weights.
+    HashbrownHashMap,
 }
 
 impl FromStr for NodeWeightArrayType {
@@ -79,6 +82,7 @@ impl FromStr for NodeWeightArrayType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "EpochNodeWeightArray" => Self::EpochNodeWeightArray,
+            "HashbrownHashMap" => Self::HashbrownHashMap,
             other => {
                 return Err(format!("Unknown node weight array type: {other}"));
             }
@@ -720,6 +724,7 @@ fn compute_greedytigs_choose_node_weight_array_type<
                 configuration,
             )
         }
+        NodeWeightArrayType::HashbrownHashMap => {compute_greedytigs::<_, _, _, _, _, DijkstraHeapType, hashbrown::HashMap<_, _>>(graph, configuration)}
     }
 }
 
@@ -1329,6 +1334,7 @@ fn compute_matchtigs_choose_node_weight_array_type<
                 configuration,
             )
         }
+        NodeWeightArrayType::HashbrownHashMap => {compute_matchtigs::<_, _, _, _, _, DijkstraHeapType, hashbrown::HashMap<_, _>>(graph, configuration)}
     }
 }
 

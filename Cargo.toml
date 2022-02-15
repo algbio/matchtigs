@@ -30,7 +30,7 @@ debug = true
 
 [dependencies]
 genome-graph = "0.6.2"
-traitgraph-algo = "0.7.0"
+traitgraph-algo = {version = "0.7.1", features = ["hashbrown_dijkstra_node_weight_array"]}
 log = "0.4.14"
 simplelog = "0.11.2"
 clap = {version = "3.0.14", features = ["derive"]}
