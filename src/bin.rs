@@ -4,6 +4,7 @@
 
 #![warn(missing_docs)]
 
+use std::collections::BinaryHeap;
 use crate::implementation::{
     compute_greedytigs, compute_matchtigs, compute_pathtigs, initialise_logging, MatchtigEdgeData,
 };
@@ -485,7 +486,7 @@ fn main() {
     if do_compute_greedytigs {
         info!("Computing greedytigs");
         let mut graph = graph.clone();
-        let greedytigs = compute_greedytigs(&mut graph, opts.threads, k);
+        let greedytigs = compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>>(&mut graph, opts.threads, k);
 
         if let Some(fa_out) = &opts.greedytigs_fa_out {
             info!("Writing greedytigs as fasta to {fa_out:?}");
@@ -509,7 +510,7 @@ fn main() {
     if do_compute_matchtigs {
         info!("Computing matchtigs");
         let mut graph = graph.clone();
-        let matchtigs = compute_matchtigs(
+        let matchtigs = compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>>(
             &mut graph,
             opts.threads,
             k,

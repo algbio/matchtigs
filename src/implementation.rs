@@ -29,9 +29,7 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
-use traitgraph_algo::dijkstra::{
-    DefaultDijkstra, Dijkstra, DijkstraTargetMap, DijkstraWeightedEdgeData, NodeWeightArray,
-};
+use traitgraph_algo::dijkstra::{DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData, NodeWeightArray};
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds
 
@@ -574,6 +572,7 @@ pub fn compute_greedytigs<
             EdgeData = EdgeData,
         > + Send
         + Sync,
+    DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
 >(
     graph: &mut Graph,
     threads: usize,
@@ -637,9 +636,10 @@ pub fn compute_greedytigs<
             EdgeData: DijkstraWeightedEdgeData<usize>,
             Graph: StaticBigraph<EdgeData = EdgeData>,
             DijkstraNodeWeightArray: NodeWeightArray<usize>,
+            DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
         >(
             graph: &Graph,
-            dijkstra: &mut Dijkstra<Graph, usize, DijkstraNodeWeightArray>,
+            dijkstra: &mut Dijkstra<Graph, usize, DijkstraNodeWeightArray, DijkstraHeapType>,
             distances: &mut Vec<(Graph::NodeIndex, usize)>,
             shortest_paths: &mut Vec<(Graph::NodeIndex, Graph::NodeIndex, usize)>,
             out_nodes: &[Graph::NodeIndex],
@@ -1085,6 +1085,7 @@ pub fn compute_matchtigs<
             EdgeData = EdgeData,
         > + Send
         + Sync,
+    DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
 >(
     graph: &mut Graph,
     threads: usize,
@@ -1277,9 +1278,10 @@ pub fn compute_matchtigs<
                 EdgeData: DijkstraWeightedEdgeData<usize>,
                 Graph: StaticGraph<EdgeData = EdgeData>,
                 DijkstraNodeWeightArray: NodeWeightArray<usize>,
+                DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
             >(
                 graph: &Graph,
-                dijkstra: &mut Dijkstra<Graph, usize, DijkstraNodeWeightArray>,
+                dijkstra: &mut Dijkstra<Graph, usize, DijkstraNodeWeightArray, DijkstraHeapType>,
                 distances: &mut Vec<(Graph::NodeIndex, usize)>,
                 shortest_paths: &mut Vec<(Graph::NodeIndex, Graph::NodeIndex, usize)>,
                 out_nodes: &[Graph::NodeIndex],
