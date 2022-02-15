@@ -5,7 +5,9 @@
 #![warn(missing_docs)]
 
 use crate::implementation::{
-    compute_greedytigs, compute_matchtigs, compute_pathtigs, initialise_logging, MatchtigEdgeData,
+    initialise_logging, GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType,
+    MatchtigAlgorithm, MatchtigAlgorithmConfiguration, MatchtigEdgeData, NodeWeightArrayType,
+    PathtigAlgorithm, TigAlgorithm,
 };
 use clap::Parser;
 use genome_graph::bigraph::interface::BidirectedData;
@@ -23,12 +25,11 @@ use genome_graph::io::fasta::{
 };
 use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
 use genome_graph::io::SequenceData;
-use std::collections::BinaryHeap;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
-use traitgraph_algo::dijkstra::{DijkstraWeightedEdgeData, EpochNodeWeightArray};
+use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
 extern crate log;
@@ -97,6 +98,14 @@ pub struct Cli {
     /// The command used to run blossom5.
     #[clap(long, default_value = "blossom5")]
     blossom5_command: String,
+
+    /// The data structure to store the weight of visited nodes in Dijkstra's algorithm.
+    #[clap(long, default_value = "EpochNodeWeightArray")]
+    dijkstra_node_weight_array_type: NodeWeightArrayType,
+
+    /// The heap data structure used by Dijkstra's algorithm.
+    #[clap(long, default_value = "StdBinaryHeap")]
+    dijkstra_heap_type: HeapType,
 }
 
 /// Edge data of a graph.
@@ -456,7 +465,7 @@ fn main() {
 
     if do_compute_pathtigs {
         info!("Computing pathtigs");
-        let pathtigs = compute_pathtigs(&graph);
+        let pathtigs = PathtigAlgorithm::compute_tigs(&mut graph, &());
 
         if let Some(fa_out) = &opts.pathtigs_fa_out {
             info!("Writing pathtigs as fasta to {fa_out:?}");
@@ -486,10 +495,14 @@ fn main() {
     if do_compute_greedytigs {
         info!("Computing greedytigs");
         let mut graph = graph.clone();
-        let greedytigs = compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+        let greedytigs = GreedytigAlgorithm::compute_tigs(
             &mut graph,
-            opts.threads,
-            k,
+            &GreedytigAlgorithmConfiguration {
+                threads: opts.threads,
+                k,
+                heap_type: opts.dijkstra_heap_type,
+                node_weight_array_type: opts.dijkstra_node_weight_array_type,
+            },
         );
 
         if let Some(fa_out) = &opts.greedytigs_fa_out {
@@ -514,14 +527,19 @@ fn main() {
     if do_compute_matchtigs {
         info!("Computing matchtigs");
         let mut graph = graph.clone();
-        let matchtigs = compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+        let matchtigs = MatchtigAlgorithm::compute_tigs(
             &mut graph,
-            opts.threads,
-            k,
-            opts.matchtigs_fa_out
-                .as_ref()
-                .unwrap_or_else(|| opts.matchtigs_gfa_out.as_ref().unwrap()),
-            &opts.blossom5_command,
+            &MatchtigAlgorithmConfiguration {
+                threads: opts.threads,
+                k,
+                node_weight_array_type: opts.dijkstra_node_weight_array_type,
+                heap_type: opts.dijkstra_heap_type,
+                matching_file_prefix: opts
+                    .matchtigs_fa_out
+                    .as_ref()
+                    .unwrap_or_else(|| opts.matchtigs_gfa_out.as_ref().unwrap()),
+                matcher_path: &opts.blossom5_command,
+            },
         );
 
         if let Some(fa_out) = &opts.matchtigs_fa_out {

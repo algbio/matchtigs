@@ -20,18 +20,20 @@ use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use genome_graph::bigraph::traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 use itertools::Itertools;
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BinaryHeap, HashMap};
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader, BufWriter};
+use std::marker::PhantomData;
 use std::process::{Command, Stdio};
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
 use traitgraph_algo::dijkstra::{
     DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData,
-    NodeWeightArray,
+    EpochNodeWeightArray, NodeWeightArray,
 };
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds
@@ -50,6 +52,58 @@ pub fn initialise_logging() {
     .unwrap();
 
     info!("Logging initialised successfully");
+}
+
+/// An algorithm to compute tigs for a graph.
+pub trait TigAlgorithm<Graph: GraphBase>: Default {
+    /// The configuration of the algorithm.
+    type Configuration;
+
+    /// Compute the tigs given a graph and configuration.
+    fn compute_tigs(
+        graph: &mut Graph,
+        configuration: &Self::Configuration,
+    ) -> Vec<VecEdgeWalk<Graph>>;
+}
+
+/// The type of the data structure to store the weight of visited nodes in Dijkstra's algorithm.
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+pub enum NodeWeightArrayType {
+    /// Use the [EpochNodeWeightArray].
+    EpochNodeWeightArray,
+}
+
+impl FromStr for NodeWeightArrayType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "EpochNodeWeightArray" => Self::EpochNodeWeightArray,
+            other => {
+                return Err(format!("Unknown node weight array type: {other}"));
+            }
+        })
+    }
+}
+
+/// The heap data structure used by Dijkstra's algorithm.
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+pub enum HeapType {
+    /// Use the [BinaryHeap](std::collections::BinaryHeap).
+    StdBinaryHeap,
+}
+
+impl FromStr for HeapType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "StdBinaryHeap" => Self::StdBinaryHeap,
+            other => {
+                return Err(format!("Unknown heap type: {other}"));
+            }
+        })
+    }
 }
 
 pub struct RelaxedAtomicBoolVec {
@@ -181,9 +235,29 @@ pub fn choose_in_node_from_iterator<
     in_node
 }
 
+/// The pathtig algorithm computes a heuristically small set of edge-disjoint paths, similar to simplitigs and UST-tigs.
+/// This algorithm does not alter the graph.
+#[derive(Default)]
+pub struct PathtigAlgorithm;
+
+impl<Graph: GraphBase> TigAlgorithm<Graph> for PathtigAlgorithm
+where
+    Graph: StaticEdgeCentricBigraph,
+    Graph::EdgeData: BidirectedData + Eq,
+{
+    type Configuration = ();
+
+    fn compute_tigs(
+        graph: &mut Graph,
+        _configuration: &Self::Configuration,
+    ) -> Vec<VecEdgeWalk<Graph>> {
+        compute_pathtigs(graph)
+    }
+}
+
 /// Compute pathtigs for the given graph.
 /// This is a heuristically small set of edge-disjoint paths, similar to simplitigs and UST-tigs.
-pub fn compute_pathtigs<
+fn compute_pathtigs<
     EdgeData: BidirectedData + Eq,
     Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
 >(
@@ -563,8 +637,94 @@ pub fn make_graph_eulerian_with_breaking_edges<
     debug_assert!(in_node_differences.is_empty());
 }
 
+/// The greedy matchtigs algorithm.
+#[derive(Default)]
+pub struct GreedytigAlgorithm<SequenceHandle> {
+    _phantom_data: PhantomData<SequenceHandle>,
+}
+
+/// The options for the greedy matchtigs algorithm.
+pub struct GreedytigAlgorithmConfiguration {
+    /// The number of threads to use.
+    pub threads: usize,
+    /// The k used to build the de Bruijn graph.
+    pub k: usize,
+    /// The type of the node weight array used by Dijkstra's algorithm.
+    pub node_weight_array_type: NodeWeightArrayType,
+    /// The type of the heap used by Dijkstra's algorithm.
+    pub heap_type: HeapType,
+}
+
+impl<Graph: GraphBase, SequenceHandle: Default + Clone> TigAlgorithm<Graph>
+    for GreedytigAlgorithm<SequenceHandle>
+where
+    Graph: DynamicEdgeCentricBigraph + Send + Sync,
+    Graph::NodeIndex: Send + Sync,
+    Graph::EdgeData: BidirectedData + Eq + Clone + MatchtigEdgeData<SequenceHandle>,
+{
+    type Configuration = GreedytigAlgorithmConfiguration;
+
+    fn compute_tigs(
+        graph: &mut Graph,
+        configuration: &Self::Configuration,
+    ) -> Vec<VecEdgeWalk<Graph>> {
+        compute_greedytigs_choose_heap_type(graph, configuration)
+    }
+}
+
+fn compute_greedytigs_choose_heap_type<
+    NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
+    OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
+    SequenceHandle: Default + Clone,
+    EdgeData: BidirectedData + Eq + MatchtigEdgeData<SequenceHandle> + Clone,
+    Graph: DynamicEdgeCentricBigraph<
+            NodeIndex = NodeIndex,
+            OptionalNodeIndex = OptionalNodeIndex,
+            EdgeData = EdgeData,
+        > + Send
+        + Sync,
+>(
+    graph: &mut Graph,
+    configuration: &GreedytigAlgorithmConfiguration,
+) -> Vec<VecEdgeWalk<Graph>> {
+    match configuration.heap_type {
+        HeapType::StdBinaryHeap => {
+            compute_greedytigs_choose_node_weight_array_type::<_, _, _, _, _, BinaryHeap<_>>(
+                graph,
+                configuration,
+            )
+        }
+    }
+}
+
+fn compute_greedytigs_choose_node_weight_array_type<
+    NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
+    OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
+    SequenceHandle: Default + Clone,
+    EdgeData: BidirectedData + Eq + MatchtigEdgeData<SequenceHandle> + Clone,
+    Graph: DynamicEdgeCentricBigraph<
+            NodeIndex = NodeIndex,
+            OptionalNodeIndex = OptionalNodeIndex,
+            EdgeData = EdgeData,
+        > + Send
+        + Sync,
+    DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
+>(
+    graph: &mut Graph,
+    configuration: &GreedytigAlgorithmConfiguration,
+) -> Vec<VecEdgeWalk<Graph>> {
+    match configuration.node_weight_array_type {
+        NodeWeightArrayType::EpochNodeWeightArray => {
+            compute_greedytigs::<_, _, _, _, _, DijkstraHeapType, EpochNodeWeightArray<_>>(
+                graph,
+                configuration,
+            )
+        }
+    }
+}
+
 /// Computes greedy matchtigs in the given graph.
-pub fn compute_greedytigs<
+fn compute_greedytigs<
     NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
     OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
     SequenceHandle: Default + Clone,
@@ -579,9 +739,11 @@ pub fn compute_greedytigs<
     DijkstraNodeWeightArray: NodeWeightArray<usize>,
 >(
     graph: &mut Graph,
-    threads: usize,
-    k: usize,
+    configuration: &GreedytigAlgorithmConfiguration,
 ) -> Vec<VecEdgeWalk<Graph>> {
+    let threads = configuration.threads;
+    let k = configuration.k;
+
     info!("Collecting nodes with missing incoming or outgoing edges");
     let mut out_nodes = Vec::new(); // Misses outgoing edges
     let mut in_node_count = 0;
@@ -1076,10 +1238,106 @@ pub fn compute_greedytigs<
     greedytigs
 }
 
+/// The matchtigs algorithm.
+#[derive(Default)]
+pub struct MatchtigAlgorithm<'a, 'b, SequenceHandle> {
+    _phantom_data: PhantomData<(&'a (), &'b (), SequenceHandle)>,
+}
+
+/// The options for the matchtigs algorithm.
+pub struct MatchtigAlgorithmConfiguration<'a, 'b> {
+    /// The number of threads to use.
+    pub threads: usize,
+    /// The k used to build the de Bruijn graph.
+    pub k: usize,
+    /// The type of the node weight array used by Dijkstra's algorithm.
+    pub node_weight_array_type: NodeWeightArrayType,
+    /// The type of the heap used by Dijkstra's algorithm.
+    pub heap_type: HeapType,
+    /// The prefix of the path used to store the matching instance.
+    pub matching_file_prefix: &'a str,
+    /// The path to the blossom5 binary.
+    pub matcher_path: &'b str,
+}
+
+impl<'a, 'b, Graph: GraphBase, SequenceHandle: Default + Clone> TigAlgorithm<Graph>
+    for MatchtigAlgorithm<'a, 'b, SequenceHandle>
+where
+    Graph: DynamicEdgeCentricBigraph + Send + Sync,
+    Graph::NodeIndex: Send + Sync,
+    Graph::EdgeData: BidirectedData + Eq + Clone + MatchtigEdgeData<SequenceHandle>,
+{
+    type Configuration = MatchtigAlgorithmConfiguration<'a, 'b>;
+
+    fn compute_tigs(
+        graph: &mut Graph,
+        configuration: &Self::Configuration,
+    ) -> Vec<VecEdgeWalk<Graph>> {
+        compute_matchtigs_choose_heap_type(graph, configuration)
+    }
+}
+
+fn compute_matchtigs_choose_heap_type<
+    'a,
+    'b,
+    NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
+    OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
+    SequenceHandle: Default + Clone,
+    EdgeData: BidirectedData + Eq + MatchtigEdgeData<SequenceHandle> + Clone,
+    Graph: DynamicEdgeCentricBigraph<
+            NodeIndex = NodeIndex,
+            OptionalNodeIndex = OptionalNodeIndex,
+            EdgeData = EdgeData,
+        > + Send
+        + Sync,
+>(
+    graph: &mut Graph,
+    configuration: &MatchtigAlgorithmConfiguration<'a, 'b>,
+) -> Vec<VecEdgeWalk<Graph>> {
+    match configuration.heap_type {
+        HeapType::StdBinaryHeap => {
+            compute_matchtigs_choose_node_weight_array_type::<_, _, _, _, _, BinaryHeap<_>>(
+                graph,
+                configuration,
+            )
+        }
+    }
+}
+
+fn compute_matchtigs_choose_node_weight_array_type<
+    'a,
+    'b,
+    NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
+    OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
+    SequenceHandle: Default + Clone,
+    EdgeData: BidirectedData + Eq + MatchtigEdgeData<SequenceHandle> + Clone,
+    Graph: DynamicEdgeCentricBigraph<
+            NodeIndex = NodeIndex,
+            OptionalNodeIndex = OptionalNodeIndex,
+            EdgeData = EdgeData,
+        > + Send
+        + Sync,
+    DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
+>(
+    graph: &mut Graph,
+    configuration: &MatchtigAlgorithmConfiguration<'a, 'b>,
+) -> Vec<VecEdgeWalk<Graph>> {
+    match configuration.node_weight_array_type {
+        NodeWeightArrayType::EpochNodeWeightArray => {
+            compute_matchtigs::<_, _, _, _, _, DijkstraHeapType, EpochNodeWeightArray<_>>(
+                graph,
+                configuration,
+            )
+        }
+    }
+}
+
 /// Computes matchtigs in the given graph.
 /// The `matcher_path` should point to a [blossom5](https://pub.ist.ac.at/~vnk/software.html) binary.
 /// The `matching_file_prefix` is the name-prefix of the file used to store the matching instance and its result.
-pub fn compute_matchtigs<
+fn compute_matchtigs<
+    'a,
+    'b,
     NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
     OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
     SequenceHandle: Default + Clone,
@@ -1094,11 +1352,13 @@ pub fn compute_matchtigs<
     DijkstraNodeWeightArray: NodeWeightArray<usize>,
 >(
     graph: &mut Graph,
-    threads: usize,
-    k: usize,
-    matching_file_prefix: &str,
-    matcher_path: &str,
+    configuration: &MatchtigAlgorithmConfiguration<'a, 'b>,
 ) -> Vec<VecEdgeWalk<Graph>> {
+    let threads = configuration.threads;
+    let k = configuration.k;
+    let matching_file_prefix = configuration.matching_file_prefix;
+    let matcher_path = configuration.matcher_path;
+
     let mut dummy_edge_id = 0;
     let dummy_sequence = SequenceHandle::default();
     /*info!("Fixing self-mirrors");

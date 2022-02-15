@@ -5,7 +5,9 @@
 //! WARNING: These functions have not been tested properly and might produce unexpected results.
 
 use crate::implementation::{
-    compute_greedytigs, compute_matchtigs, compute_pathtigs, initialise_logging, MatchtigEdgeData,
+    initialise_logging, GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType,
+    MatchtigAlgorithm, MatchtigAlgorithmConfiguration, MatchtigEdgeData, NodeWeightArrayType,
+    PathtigAlgorithm, TigAlgorithm,
 };
 use disjoint_sets::UnionFind;
 use genome_graph::bigraph::implementation::node_bigraph_wrapper::PetBigraph;
@@ -17,11 +19,10 @@ use genome_graph::bigraph::traitgraph::interface::{
     GraphBase, ImmutableGraphContainer, MutableGraphContainer,
 };
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
-use std::collections::BinaryHeap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::time::Instant;
-use traitgraph_algo::dijkstra::{DijkstraWeightedEdgeData, EpochNodeWeightArray};
+use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 type MatchtigGraph = PetBigraph<(), ExternalEdgeData>;
 
@@ -316,18 +317,26 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
                 }
             })
             .collect(),
-        2 => compute_pathtigs(get_graph()),
-        3 => compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+        2 => PathtigAlgorithm::compute_tigs(get_graph(), &()),
+        3 => MatchtigAlgorithm::compute_tigs(
             get_graph(),
-            threads,
-            k,
-            matching_file_prefix,
-            matcher_path,
+            &MatchtigAlgorithmConfiguration {
+                threads,
+                k,
+                heap_type: HeapType::StdBinaryHeap,
+                node_weight_array_type: NodeWeightArrayType::EpochNodeWeightArray,
+                matching_file_prefix,
+                matcher_path,
+            },
         ),
-        4 => compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+        4 => GreedytigAlgorithm::compute_tigs(
             get_graph(),
-            threads,
-            k,
+            &GreedytigAlgorithmConfiguration {
+                threads,
+                k,
+                heap_type: HeapType::StdBinaryHeap,
+                node_weight_array_type: NodeWeightArrayType::EpochNodeWeightArray,
+            },
         ),
         tig_algorithm => panic!("Unknown tigs algorithm identifier {}", tig_algorithm),
     };

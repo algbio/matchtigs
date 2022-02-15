@@ -9,4 +9,7 @@ extern crate log;
 pub mod clib;
 mod implementation;
 
-pub use implementation::{compute_greedytigs, compute_matchtigs, compute_pathtigs};
+pub use implementation::{
+    GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType, MatchtigAlgorithm,
+    MatchtigAlgorithmConfiguration, NodeWeightArrayType, PathtigAlgorithm, TigAlgorithm,
+};
