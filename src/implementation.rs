@@ -29,7 +29,10 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
-use traitgraph_algo::dijkstra::{DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData, NodeWeightArray};
+use traitgraph_algo::dijkstra::{
+    DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData,
+    NodeWeightArray,
+};
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds
 
@@ -573,6 +576,7 @@ pub fn compute_greedytigs<
         > + Send
         + Sync,
     DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
+    DijkstraNodeWeightArray: NodeWeightArray<usize>,
 >(
     graph: &mut Graph,
     threads: usize,
@@ -884,7 +888,8 @@ pub fn compute_greedytigs<
             for _ in 0..threads {
                 thread_handles.push(scope.spawn(|_| {
                     let graph = shared_graph;
-                    let mut dijkstra = DefaultDijkstra::new(graph);
+                    let mut dijkstra =
+                        Dijkstra::<_, _, DijkstraNodeWeightArray, DijkstraHeapType>::new(graph);
                     let mut distances = Vec::new();
                     let mut shortest_paths = Vec::new();
                     let mut chunk_size = 1024;
@@ -1086,6 +1091,7 @@ pub fn compute_matchtigs<
         > + Send
         + Sync,
     DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
+    DijkstraNodeWeightArray: NodeWeightArray<usize>,
 >(
     graph: &mut Graph,
     threads: usize,
@@ -1146,7 +1152,8 @@ pub fn compute_matchtigs<
     let (edges, node_id_map, matching_mirror_biedge_count, matching_mirror_expanded_biedge_count) =
         if threads == 1 {
             info!("Using 1 thread to run ~{} dijkstras", out_nodes.len());
-            let mut dijkstra = DefaultDijkstra::new(graph);
+            let mut dijkstra =
+                Dijkstra::<_, _, DijkstraNodeWeightArray, DijkstraHeapType>::new(graph);
             let mut distances = Vec::new();
             let in_node_map = RelaxedAtomicBoolVec::new(graph.node_count());
             for node in &in_nodes {

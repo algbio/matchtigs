@@ -4,7 +4,6 @@
 
 #![warn(missing_docs)]
 
-use std::collections::BinaryHeap;
 use crate::implementation::{
     compute_greedytigs, compute_matchtigs, compute_pathtigs, initialise_logging, MatchtigEdgeData,
 };
@@ -24,11 +23,12 @@ use genome_graph::io::fasta::{
 };
 use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
 use genome_graph::io::SequenceData;
+use std::collections::BinaryHeap;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
-use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
+use traitgraph_algo::dijkstra::{DijkstraWeightedEdgeData, EpochNodeWeightArray};
 
 #[macro_use]
 extern crate log;
@@ -486,7 +486,11 @@ fn main() {
     if do_compute_greedytigs {
         info!("Computing greedytigs");
         let mut graph = graph.clone();
-        let greedytigs = compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>>(&mut graph, opts.threads, k);
+        let greedytigs = compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+            &mut graph,
+            opts.threads,
+            k,
+        );
 
         if let Some(fa_out) = &opts.greedytigs_fa_out {
             info!("Writing greedytigs as fasta to {fa_out:?}");
@@ -510,7 +514,7 @@ fn main() {
     if do_compute_matchtigs {
         info!("Computing matchtigs");
         let mut graph = graph.clone();
-        let matchtigs = compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>>(
+        let matchtigs = compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
             &mut graph,
             opts.threads,
             k,

@@ -4,7 +4,6 @@
 //!
 //! WARNING: These functions have not been tested properly and might produce unexpected results.
 
-use std::collections::BinaryHeap;
 use crate::implementation::{
     compute_greedytigs, compute_matchtigs, compute_pathtigs, initialise_logging, MatchtigEdgeData,
 };
@@ -18,10 +17,11 @@ use genome_graph::bigraph::traitgraph::interface::{
     GraphBase, ImmutableGraphContainer, MutableGraphContainer,
 };
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
+use std::collections::BinaryHeap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::time::Instant;
-use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
+use traitgraph_algo::dijkstra::{DijkstraWeightedEdgeData, EpochNodeWeightArray};
 
 type MatchtigGraph = PetBigraph<(), ExternalEdgeData>;
 
@@ -317,8 +317,18 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
             })
             .collect(),
         2 => compute_pathtigs(get_graph()),
-        3 => compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>>(get_graph(), threads, k, matching_file_prefix, matcher_path),
-        4 => compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>>(get_graph(), threads, k),
+        3 => compute_matchtigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+            get_graph(),
+            threads,
+            k,
+            matching_file_prefix,
+            matcher_path,
+        ),
+        4 => compute_greedytigs::<_, _, _, _, _, BinaryHeap<_>, EpochNodeWeightArray<_>>(
+            get_graph(),
+            threads,
+            k,
+        ),
         tig_algorithm => panic!("Unknown tigs algorithm identifier {}", tig_algorithm),
     };
 
