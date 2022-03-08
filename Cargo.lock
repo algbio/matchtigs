@@ -92,9 +92,9 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.6.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cb1f8b6b4d1d8b197003da996b3d29eb5cd7c6343df82d50b9573b424d5bc1d"
+checksum = "d3442960572fd33c61eb32f69c39678beac61e18b2ba0bd5cb8cce7ef30a2a66"
 dependencies = [
  "bitvector",
  "num-traits",
@@ -286,12 +286,13 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.6.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fb7b0e93030a2c278703f84df4179dbb3a28910b4d00241590ef2b8478904a3"
+checksum = "92bac81acaee6a58d2c50f622201444277ac5d5d7dfe058ed7c8d47a105dc58c"
 dependencies = [
  "bitvec",
  "itertools",
+ "lazy_static",
  "ref-cast",
  "traitsequence",
 ]
@@ -474,9 +475,9 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.6.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1243b33d8c3756a4b81b044fd833dd8532f88e6db3fa3a546cf6c080788a937c"
+checksum = "e98ac4fdc9497e8217ca9155b50f393204509d1680dbb7afbc9517f0fd10bbde"
 dependencies = [
  "anyhow",
  "bigraph",
@@ -1228,9 +1229,9 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.7.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27f62d79568b92a08597725d326d351f5c0830c6b166b139511bc689bc3b768d"
+checksum = "cf62128e830b5280aede16dfedd4ccca7d59bef5fc5e8e3fbd42c5134c821762"
 dependencies = [
  "bitvector",
  "num-traits",
@@ -1240,9 +1241,9 @@ dependencies = [
 
 [[package]]
 name = "traitgraph-algo"
-version = "0.7.1"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70feb99e6b99b5dac4fa0ca03e0c228f7a3f7ac2f82ec9925e686eb45ff93aa7"
+checksum = "dcd5bc55b1b4fbacb685f417f5fedb9f1e35196806e8cee30e62b1fa7a71a3e9"
 dependencies = [
  "hashbrown 0.12.0",
  "rand",
@@ -1251,9 +1252,9 @@ dependencies = [
 
 [[package]]
 name = "traitsequence"
-version = "0.6.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fc72819501e9c4430514249c67906b22235a0eb2ab30bf4ffebfdd69f32df3f"
+checksum = "21695cbcb01adde5f4b5e39be180ac583878a108314ed8877fe158d58ed770a1"
 
 [[package]]
 name = "triple_accel"

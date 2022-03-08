@@ -33,7 +33,7 @@ use std::sync::Mutex;
 use std::time::Instant;
 use traitgraph_algo::dijkstra::{
     DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData,
-    EpochNodeWeightArray, NodeWeightArray,
+    epoch_array_dijkstra_node_weight_array::EpochNodeWeightArray, NodeWeightArray,
 };
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds

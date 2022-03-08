@@ -4,6 +4,7 @@
 
 #![warn(missing_docs)]
 
+use std::fmt::Debug;
 use crate::implementation::{
     initialise_logging, GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType,
     MatchtigAlgorithm, MatchtigAlgorithmConfiguration, MatchtigEdgeData, NodeWeightArrayType,
@@ -29,6 +30,8 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
+use genome_graph::compact_genome::interface::alphabet::Alphabet;
+use genome_graph::compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
@@ -137,19 +140,19 @@ impl<SequenceHandle: Clone> BidirectedData for CliEdgeData<SequenceHandle> {
     }
 }
 
-impl<GenomeSequenceStore: SequenceStore> SequenceData<GenomeSequenceStore>
+impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>> SequenceData<AlphabetType, GenomeSequenceStore>
     for CliEdgeData<GenomeSequenceStore::Handle>
 {
-    fn sequence_handle(&self) -> &<GenomeSequenceStore as SequenceStore>::Handle {
+    fn sequence_handle(&self) -> &<GenomeSequenceStore as SequenceStore<AlphabetType>>::Handle {
         &self.sequence_handle
     }
 
     fn sequence_ref<'a>(
         &self,
         source_sequence_store: &'a GenomeSequenceStore,
-    ) -> Option<&'a <GenomeSequenceStore as SequenceStore>::SequenceRef> {
+    ) -> Option<&'a <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef> {
         if self.forward {
-            let handle = <Self as SequenceData<GenomeSequenceStore>>::sequence_handle(self);
+            let handle = <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
             Some(source_sequence_store.get(handle))
         } else {
             None
@@ -157,13 +160,13 @@ impl<GenomeSequenceStore: SequenceStore> SequenceData<GenomeSequenceStore>
     }
 
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
         source_sequence_store: &GenomeSequenceStore,
     ) -> ResultSequence {
-        let handle = <Self as SequenceData<GenomeSequenceStore>>::sequence_handle(self);
+        let handle = <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
         if self.forward {
             source_sequence_store.get(handle).convert()
         } else {
@@ -272,8 +275,9 @@ pub fn compute_edge_weights<
 /// This function is empty if compiled without debug assertions.
 pub fn debug_assert_graph_edge_labels<
     NodeData,
-    GenomeSequenceStore: SequenceStore,
-    EdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<GenomeSequenceStore>,
+    AlphabetType: Alphabet + Debug + Eq + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
+    EdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
 >(
     graph: &Graph,
@@ -290,9 +294,9 @@ pub fn debug_assert_graph_edge_labels<
                 let first_data = graph.edge_data(in_neighbor.edge_id);
                 let second_data = graph.edge_data(out_neighbor.edge_id);
 
-                let first_data_sequence: DefaultGenome =
+                let first_data_sequence: DefaultGenome<AlphabetType> =
                     first_data.sequence_owned(source_sequence_store);
-                let second_data_sequence: DefaultGenome =
+                let second_data_sequence: DefaultGenome<AlphabetType> =
                     second_data.sequence_owned(source_sequence_store);
 
                 let first_kmer = &first_data_sequence[first_data_sequence.len() - k + 1..];
@@ -308,8 +312,9 @@ pub fn debug_assert_graph_edge_labels<
 pub fn write_walks_gfa<
     'ws,
     NodeData,
-    GenomeSequenceStore: SequenceStore,
-    GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<GenomeSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
+    GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
     SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
@@ -349,7 +354,7 @@ pub fn write_walks_gfa<
             writeln!(debug_writer, "matchtig {}", i + 1).unwrap();
         }
 
-        let first_data_sequence: DefaultGenome = first_data.sequence_owned(source_sequence_store);
+        let first_data_sequence: DefaultGenome<AlphabetType> = first_data.sequence_owned(source_sequence_store);
         let first_data_sequence = first_data_sequence.as_string();
 
         write!(writer, "{}", first_data_sequence).unwrap();
@@ -390,7 +395,7 @@ pub fn write_walks_gfa<
                 k - 1 - previous_data.weight()
             };
 
-            let current_data_sequence: DefaultGenome =
+            let current_data_sequence: DefaultGenome<AlphabetType> =
                 current_data.sequence_owned(source_sequence_store);
             let current_data_sequence = &current_data_sequence[offset..].as_string();
 
@@ -422,7 +427,7 @@ fn main() {
     let opts: Cli = Cli::parse();
 
     // Load graph
-    let mut sequence_store = DefaultSequenceStore::default();
+    let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
     let (mut graph, k, gfa_header): (CliGraph<_>, _, _) = if let Some(gfa_in) = &opts.gfa_in {
         info!("Reading gfa as edge centric bigraph from {gfa_in:?}");
