@@ -32,8 +32,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
 use traitgraph_algo::dijkstra::{
-    DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData,
-    epoch_array_dijkstra_node_weight_array::EpochNodeWeightArray, NodeWeightArray,
+    epoch_array_dijkstra_node_weight_array::EpochNodeWeightArray, DefaultDijkstra, Dijkstra,
+    DijkstraHeap, DijkstraTargetMap, DijkstraWeightedEdgeData, NodeWeightArray,
 };
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds
@@ -724,7 +724,12 @@ fn compute_greedytigs_choose_node_weight_array_type<
                 configuration,
             )
         }
-        NodeWeightArrayType::HashbrownHashMap => {compute_greedytigs::<_, _, _, _, _, DijkstraHeapType, hashbrown::HashMap<_, _>>(graph, configuration)}
+        NodeWeightArrayType::HashbrownHashMap => {
+            compute_greedytigs::<_, _, _, _, _, DijkstraHeapType, hashbrown::HashMap<_, _>>(
+                graph,
+                configuration,
+            )
+        }
     }
 }
 
@@ -1334,7 +1339,12 @@ fn compute_matchtigs_choose_node_weight_array_type<
                 configuration,
             )
         }
-        NodeWeightArrayType::HashbrownHashMap => {compute_matchtigs::<_, _, _, _, _, DijkstraHeapType, hashbrown::HashMap<_, _>>(graph, configuration)}
+        NodeWeightArrayType::HashbrownHashMap => {
+            compute_matchtigs::<_, _, _, _, _, DijkstraHeapType, hashbrown::HashMap<_, _>>(
+                graph,
+                configuration,
+            )
+        }
     }
 }
 

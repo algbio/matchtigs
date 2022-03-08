@@ -4,7 +4,6 @@
 
 #![warn(missing_docs)]
 
-use std::fmt::Debug;
 use crate::implementation::{
     initialise_logging, GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType,
     MatchtigAlgorithm, MatchtigAlgorithmConfiguration, MatchtigEdgeData, NodeWeightArrayType,
@@ -18,6 +17,8 @@ use genome_graph::bigraph::traitgraph::interface::StaticGraph;
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use genome_graph::bigraph::traitgraph::walks::EdgeWalk;
 use genome_graph::compact_genome::implementation::{DefaultGenome, DefaultSequenceStore};
+use genome_graph::compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
+use genome_graph::compact_genome::interface::alphabet::Alphabet;
 use genome_graph::compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use genome_graph::compact_genome::interface::sequence_store::{HandleWithLength, SequenceStore};
 use genome_graph::io::bcalm2::PlainBCalm2NodeData;
@@ -26,12 +27,11 @@ use genome_graph::io::fasta::{
 };
 use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
 use genome_graph::io::SequenceData;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
-use genome_graph::compact_genome::interface::alphabet::Alphabet;
-use genome_graph::compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
@@ -140,8 +140,8 @@ impl<SequenceHandle: Clone> BidirectedData for CliEdgeData<SequenceHandle> {
     }
 }
 
-impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>> SequenceData<AlphabetType, GenomeSequenceStore>
-    for CliEdgeData<GenomeSequenceStore::Handle>
+impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>>
+    SequenceData<AlphabetType, GenomeSequenceStore> for CliEdgeData<GenomeSequenceStore::Handle>
 {
     fn sequence_handle(&self) -> &<GenomeSequenceStore as SequenceStore<AlphabetType>>::Handle {
         &self.sequence_handle
@@ -152,7 +152,8 @@ impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>> S
         source_sequence_store: &'a GenomeSequenceStore,
     ) -> Option<&'a <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef> {
         if self.forward {
-            let handle = <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
+            let handle =
+                <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
             Some(source_sequence_store.get(handle))
         } else {
             None
@@ -166,7 +167,8 @@ impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>> S
         &self,
         source_sequence_store: &GenomeSequenceStore,
     ) -> ResultSequence {
-        let handle = <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
+        let handle =
+            <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
         if self.forward {
             source_sequence_store.get(handle).convert()
         } else {
@@ -354,7 +356,8 @@ pub fn write_walks_gfa<
             writeln!(debug_writer, "matchtig {}", i + 1).unwrap();
         }
 
-        let first_data_sequence: DefaultGenome<AlphabetType> = first_data.sequence_owned(source_sequence_store);
+        let first_data_sequence: DefaultGenome<AlphabetType> =
+            first_data.sequence_owned(source_sequence_store);
         let first_data_sequence = first_data_sequence.as_string();
 
         write!(writer, "{}", first_data_sequence).unwrap();
