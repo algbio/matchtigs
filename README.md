@@ -8,6 +8,7 @@ The algorithms expect unitigs as an input, which can e.g. be computed with [BCAL
  * Compute matchtigs, greedy matchtigs or pathtigs (a heuristic similar to [simplitigs](https://doi.org/10.1186/s13059-021-02297-z))
  * Compute matchtigs and greedy matchtigs with multiple threads
  * Both fasta and GFA format supported
+ * Output (ASCII-) bitvectors of duplicate kmers for applications that require unique kmers
 
 ## Installation via [conda/mamba](https://docs.conda.io/en/latest/)
 
@@ -20,7 +21,7 @@ mamba install -c conda-forge -c bioconda matchtigs
 
 ### Requirements
 
-Rust `>= 1.56.1`, best installed via [rustup](https://rustup.rs/).
+Rust `>= 1.58.1`, best installed via [rustup](https://rustup.rs/).
 
 ### Installation
 
