@@ -22,9 +22,7 @@ use genome_graph::compact_genome::interface::alphabet::Alphabet;
 use genome_graph::compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use genome_graph::compact_genome::interface::sequence_store::{HandleWithLength, SequenceStore};
 use genome_graph::io::bcalm2::PlainBCalm2NodeData;
-use genome_graph::io::fasta::{
-    read_bigraph_from_fasta_as_edge_centric_from_file, write_walks_as_fasta_file, FastaNodeData,
-};
+use genome_graph::io::fasta::{read_bigraph_from_fasta_as_edge_centric_from_file, FastaNodeData};
 use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
 use genome_graph::io::SequenceData;
 use std::fmt::Debug;
@@ -121,6 +119,14 @@ pub struct Cli {
     /// The heap data structure used by Dijkstra's algorithm.
     #[clap(long, default_value = "StdBinaryHeap")]
     dijkstra_heap_type: HeapType,
+
+    /// Print the de Bruijn graph constructed from the input unitigs.
+    #[clap(long)]
+    debug_print_graph: bool,
+
+    /// Print the tigs as sequences of edge ids.
+    #[clap(long)]
+    debug_print_walks: bool,
 }
 
 /// Edge data of a graph.
@@ -322,8 +328,8 @@ pub fn debug_assert_graph_edge_labels<
     }
 }
 
-/// Write a set of walks in GFA format.
-pub fn write_walks_gfa<
+/// Write a sequence of walks in fasta format.
+pub fn write_walks_fasta<
     'ws,
     NodeData,
     AlphabetType: Alphabet + 'static,
@@ -339,7 +345,6 @@ pub fn write_walks_gfa<
     walks: WalkSource,
     source_sequence_store: &GenomeSequenceStore,
     k: usize,
-    header: &Option<String>,
     file_path: P,
     debug_file_path: Option<&str>,
 ) {
@@ -347,25 +352,15 @@ pub fn write_walks_gfa<
     let mut debug_writer = debug_file_path
         .map(|debug_file_path| BufWriter::new(File::create(debug_file_path).unwrap()));
 
-    let header = if let Some(header) = header {
-        header.clone()
-    } else {
-        format!("H\tKL:Z:{}", k)
-    };
-    writeln!(writer, "{}", header).unwrap();
-    if let Some(debug_writer) = &mut debug_writer {
-        writeln!(debug_writer, "{}", header).unwrap();
-    }
-
     for (i, walk) in walks.into_iter().enumerate() {
         let first_edge = *walk.first().unwrap();
         let first_data = graph.edge_data(first_edge);
         debug_assert!(first_data.is_original());
         debug_assert!(graph.edge_data(*walk.last().unwrap()).is_original());
 
-        write!(writer, "S\t{}\t", i + 1).unwrap();
+        writeln!(writer, ">{}", i + 1).unwrap();
         if let Some(debug_writer) = &mut debug_writer {
-            writeln!(debug_writer, "matchtig {}", i + 1).unwrap();
+            writeln!(debug_writer, "tig {}", i + 1).unwrap();
         }
 
         let first_data_sequence: DefaultGenome<AlphabetType> =
@@ -437,6 +432,143 @@ pub fn write_walks_gfa<
     }
 }
 
+/// Write a set of walks in GFA format.
+pub fn write_walks_gfa<
+    'ws,
+    NodeData,
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
+    GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
+    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    WalkSource: IntoIterator<Item = &'ws Walk>,
+    P: AsRef<Path>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    source_sequence_store: &GenomeSequenceStore,
+    k: usize,
+    header: &Option<String>,
+    file_path: P,
+    debug_file_path: Option<&str>,
+) {
+    let mut writer = BufWriter::new(File::create(file_path).unwrap());
+    let mut debug_writer = debug_file_path
+        .map(|debug_file_path| BufWriter::new(File::create(debug_file_path).unwrap()));
+
+    let header = if let Some(header) = header {
+        header.clone()
+    } else {
+        format!("H\tKL:Z:{}", k)
+    };
+    writeln!(writer, "{}", header).unwrap();
+    if let Some(debug_writer) = &mut debug_writer {
+        writeln!(debug_writer, "{}", header).unwrap();
+    }
+
+    for (i, walk) in walks.into_iter().enumerate() {
+        let first_edge = *walk.first().unwrap();
+        let first_data = graph.edge_data(first_edge);
+        debug_assert!(first_data.is_original());
+        debug_assert!(graph.edge_data(*walk.last().unwrap()).is_original());
+
+        write!(writer, "S\t{}\t", i + 1).unwrap();
+        if let Some(debug_writer) = &mut debug_writer {
+            writeln!(debug_writer, "tig {}", i + 1).unwrap();
+        }
+
+        let first_data_sequence: DefaultGenome<AlphabetType> =
+            first_data.sequence_owned(source_sequence_store);
+        let first_data_sequence = first_data_sequence.as_string();
+
+        write!(writer, "{}", first_data_sequence).unwrap();
+        if let Some(debug_writer) = &mut debug_writer {
+            write!(
+                debug_writer,
+                "| {}{} {} ",
+                first_edge.as_usize(),
+                if first_data.is_forwards() { "f" } else { "r" },
+                first_data_sequence
+            )
+            .unwrap();
+        }
+
+        let mut previous = *walk.first().unwrap();
+        for &current in walk.iter().skip(1) {
+            let previous_data = graph.edge_data(previous);
+            let current_data = graph.edge_data(current);
+            debug_assert!(previous_data.is_original() || current_data.is_original());
+
+            if current_data.is_dummy() {
+                if let Some(debug_writer) = &mut debug_writer {
+                    write!(
+                        debug_writer,
+                        "| skip dummy {} weight {} ",
+                        current.as_usize(),
+                        current_data.weight()
+                    )
+                    .unwrap();
+                }
+                previous = current;
+                continue;
+            }
+
+            let offset = if previous_data.is_original() {
+                k - 1
+            } else {
+                k - 1 - previous_data.weight()
+            };
+
+            let current_data_sequence: DefaultGenome<AlphabetType> =
+                current_data.sequence_owned(source_sequence_store);
+            let current_data_sequence = &current_data_sequence[offset..].as_string();
+
+            if let Some(debug_writer) = &mut debug_writer {
+                write!(
+                    debug_writer,
+                    "| {}{}:off {} {} ",
+                    current.as_usize(),
+                    if current_data.is_forwards() { "f" } else { "r" },
+                    offset,
+                    current_data_sequence
+                )
+                .unwrap();
+            }
+
+            write!(writer, "{}", current_data_sequence).unwrap();
+
+            previous = current;
+        }
+        writeln!(writer).unwrap();
+        if let Some(debug_writer) = &mut debug_writer {
+            writeln!(debug_writer).unwrap();
+        }
+    }
+}
+
+fn debug_print_walks<
+    'ws,
+    Graph: ImmutableGraphContainer,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    _graph: &Graph,
+    walks: WalkSource,
+) {
+    info!("Printing walks to stdout, because --debug-print-walks was set");
+    for walk in walks.into_iter() {
+        for (i, edge_index) in walk.iter().enumerate() {
+            if i != 0 {
+                print!(", ");
+            }
+            print!("{}", edge_index.as_usize());
+        }
+        println!();
+    }
+}
+
 fn main() {
     initialise_logging();
     let opts: Cli = Cli::parse();
@@ -478,6 +610,22 @@ fn main() {
     );
     debug_assert_graph_edge_labels(&graph, &sequence_store, k);
 
+    if opts.debug_print_graph {
+        info!("Printing graph to stdout, because --debug-print-graph was set");
+        for edge_index in graph.edge_indices() {
+            let endpoints = graph.edge_endpoints(edge_index);
+            let edge_data = graph.edge_data(edge_index);
+            let sequence = sequence_store.get(&edge_data.sequence_handle);
+            println!(
+                "{} ({} -> {}) {}",
+                edge_index.as_usize(),
+                endpoints.from_node.as_usize(),
+                endpoints.to_node.as_usize(),
+                sequence.as_string()
+            );
+        }
+    }
+
     let do_compute_pathtigs = opts.pathtigs_fa_out.is_some() || opts.pathtigs_gfa_out.is_some();
     let do_compute_greedytigs = opts.greedytigs_fa_out.is_some()
         || opts.greedytigs_gfa_out.is_some()
@@ -492,7 +640,7 @@ fn main() {
 
         if let Some(fa_out) = &opts.pathtigs_fa_out {
             info!("Writing pathtigs as fasta to {fa_out:?}");
-            write_walks_as_fasta_file(&graph, &sequence_store, k, &pathtigs, fa_out).unwrap();
+            write_walks_fasta(&graph, &pathtigs, &sequence_store, k, fa_out, None);
         }
 
         if let Some(gfa_out) = &opts.pathtigs_gfa_out {
@@ -506,6 +654,10 @@ fn main() {
                 gfa_out,
                 None,
             );
+        }
+
+        if opts.debug_print_walks {
+            debug_print_walks(&graph, &pathtigs);
         }
     }
 
@@ -530,7 +682,7 @@ fn main() {
 
         if let Some(fa_out) = &opts.greedytigs_fa_out {
             info!("Writing greedytigs as fasta to {fa_out:?}");
-            write_walks_as_fasta_file(&graph, &sequence_store, k, &greedytigs, fa_out).unwrap();
+            write_walks_fasta(&graph, &greedytigs, &sequence_store, k, fa_out, None);
         }
 
         if let Some(gfa_out) = &opts.greedytigs_gfa_out {
@@ -550,6 +702,10 @@ fn main() {
             info!("Writing greedytig duplication bitvector to {duplication_bitvector_out:?}");
             write_duplication_bitvector_to_file(&graph, &greedytigs, duplication_bitvector_out)
                 .unwrap();
+        }
+
+        if opts.debug_print_walks {
+            debug_print_walks(&graph, &greedytigs);
         }
     }
 
@@ -573,7 +729,7 @@ fn main() {
 
         if let Some(fa_out) = &opts.matchtigs_fa_out {
             info!("Writing matchtigs as fasta to {fa_out:?}");
-            write_walks_as_fasta_file(&graph, &sequence_store, k, &matchtigs, fa_out).unwrap();
+            write_walks_fasta(&graph, &matchtigs, &sequence_store, k, fa_out, None);
         }
 
         if let Some(gfa_out) = &opts.matchtigs_gfa_out {
@@ -593,6 +749,10 @@ fn main() {
             info!("Writing matchtig duplication bitvector to {duplication_bitvector_out:?}");
             write_duplication_bitvector_to_file(&graph, &matchtigs, duplication_bitvector_out)
                 .unwrap();
+        }
+
+        if opts.debug_print_walks {
+            debug_print_walks(&graph, &matchtigs);
         }
     }
 
