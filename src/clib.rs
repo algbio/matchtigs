@@ -19,8 +19,10 @@ use genome_graph::bigraph::traitgraph::interface::{
     GraphBase, ImmutableGraphContainer, MutableGraphContainer,
 };
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString, OsString};
 use std::os::raw::c_char;
+use std::os::unix::ffi::OsStringExt;
+use std::path::PathBuf;
 use std::time::Instant;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
@@ -272,21 +274,23 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
         get_graph().edge_count()
     );
 
-    let matching_file_prefix = {
-        assert!(!matching_file_prefix.is_null());
+    let matching_file_prefix = PathBuf::from(OsString::from_vec(
+        CString::from({
+            assert!(!matching_file_prefix.is_null());
 
-        CStr::from_ptr(matching_file_prefix)
-    }
-    .to_str()
-    .unwrap();
+            CStr::from_ptr(matching_file_prefix)
+        })
+        .into_bytes(),
+    ));
 
-    let matcher_path = {
-        assert!(!matcher_path.is_null());
+    let matcher_path = PathBuf::from(OsString::from_vec(
+        CString::from({
+            assert!(!matcher_path.is_null());
 
-        CStr::from_ptr(matcher_path)
-    }
-    .to_str()
-    .unwrap();
+            CStr::from_ptr(matcher_path)
+        })
+        .into_bytes(),
+    ));
 
     let tigs_edge_out = {
         assert!(!tigs_edge_out.is_null());
@@ -325,8 +329,8 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
                 k,
                 heap_type: HeapType::StdBinaryHeap,
                 node_weight_array_type: NodeWeightArrayType::EpochNodeWeightArray,
-                matching_file_prefix,
-                matcher_path,
+                matching_file_prefix: &matching_file_prefix,
+                matcher_path: &matcher_path,
             },
         ),
         4 => GreedytigAlgorithm::compute_tigs(

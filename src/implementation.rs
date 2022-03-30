@@ -24,11 +24,12 @@ use itertools::Itertools;
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use std::collections::{BTreeMap, BinaryHeap, HashMap};
 use std::convert::TryInto;
+use std::ffi::{OsStr, OsString};
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader, BufWriter};
 use std::marker::PhantomData;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -1268,9 +1269,9 @@ pub struct MatchtigAlgorithmConfiguration<'a, 'b> {
     /// The type of the heap used by Dijkstra's algorithm.
     pub heap_type: HeapType,
     /// The prefix of the path used to store the matching instance.
-    pub matching_file_prefix: &'a str,
+    pub matching_file_prefix: &'a Path,
     /// The path to the blossom5 binary.
-    pub matcher_path: &'b str,
+    pub matcher_path: &'b Path,
 }
 
 impl<'a, 'b, Graph: GraphBase, SequenceHandle: Default + Clone> TigAlgorithm<Graph>
@@ -1771,7 +1772,8 @@ fn compute_matchtigs<
     );
 
     // Output matching graph transformed to a perfect minimal matching problem
-    let matching_input_path = matching_file_prefix.to_owned() + ".minimalperfectmatching";
+    let matching_input_path =
+        append_to_filename(matching_file_prefix.to_owned(), ".minimalperfectmatching");
     info!("Outputting matching problem to {:?}", matching_input_path);
     let mut output_writer = BufWriter::new(File::create(&matching_input_path).unwrap());
     writeln!(
@@ -1841,11 +1843,11 @@ fn compute_matchtigs<
     drop(output_writer);
 
     // Matching if necessary
-    let matching_output_path = matching_input_path.clone() + ".solution";
+    let matching_output_path = append_to_filename(matching_input_path.clone(), ".solution");
 
     if transformed_node_count != 0 {
         // Run matcher
-        info!("Running matcher at {}", matcher_path);
+        info!("Running matcher at {:?}", matcher_path);
         let matcher_output = Command::new(matcher_path)
             .arg("-e")
             .arg(&matching_input_path)
@@ -2099,4 +2101,10 @@ pub fn write_duplication_bitvector<
     }
 
     Ok(())
+}
+
+fn append_to_filename(path: PathBuf, ext: impl AsRef<OsStr>) -> PathBuf {
+    let mut os_string: OsString = path.into();
+    os_string.push(ext.as_ref());
+    os_string.into()
 }

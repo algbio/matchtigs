@@ -29,7 +29,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
@@ -50,7 +50,7 @@ pub struct Cli {
     /// GFA file containing the input unitigs.
     /// Either a GFA input file or a fasta input file must be given.
     #[clap(long, conflicts_with = "fa-in", required_unless_present = "fa-in")]
-    gfa_in: Option<String>,
+    gfa_in: Option<PathBuf>,
 
     /// Fasta file containing the input unitigs.
     /// Either a GFA input file or a fasta input file must be given.
@@ -60,43 +60,43 @@ pub struct Cli {
         required_unless_present = "gfa-in",
         requires = "k"
     )]
-    fa_in: Option<String>,
+    fa_in: Option<PathBuf>,
 
     /// Compute pathtigs and write them to the given file in GFA format.
     #[clap(long)]
-    pathtigs_gfa_out: Option<String>,
+    pathtigs_gfa_out: Option<PathBuf>,
 
     /// Compute pathtigs and write them to the given file in fasta format.
     #[clap(long)]
-    pathtigs_fa_out: Option<String>,
+    pathtigs_fa_out: Option<PathBuf>,
 
     /// Compute greedy matchtigs and write them to the given file in GFA format.
     #[clap(long)]
-    greedytigs_gfa_out: Option<String>,
+    greedytigs_gfa_out: Option<PathBuf>,
 
     /// Compute greedy matchtigs and write them to the given file in fasta format.
     #[clap(long)]
-    greedytigs_fa_out: Option<String>,
+    greedytigs_fa_out: Option<PathBuf>,
 
     /// Compute matchtigs and write them to the given file in GFA format.
     #[clap(long)]
-    matchtigs_gfa_out: Option<String>,
+    matchtigs_gfa_out: Option<PathBuf>,
 
     /// Compute matchtigs and write them to the given file in fasta format.
     #[clap(long)]
-    matchtigs_fa_out: Option<String>,
+    matchtigs_fa_out: Option<PathBuf>,
 
     /// Output a file with bitvectors in ASCII format, with a 0 for each duplicated instance of a kmer in the greedytigs.
     /// The bitvectors are separated by newline characters.
     /// Taking all kmers with a 1 results in a set of all original kmers with no duplicates.
     #[clap(long)]
-    greedytigs_duplication_bitvector_out: Option<String>,
+    greedytigs_duplication_bitvector_out: Option<PathBuf>,
 
     /// Output a file with bitvectors in ASCII format, with a 0 for each duplicated instance of a kmer in the matchtigs.
     /// The bitvectors are separated by newline characters.
     /// Taking all kmers with a 1 results in a set of all original kmers with no duplicates.
     #[clap(long)]
-    matchtigs_duplication_bitvector_out: Option<String>,
+    matchtigs_duplication_bitvector_out: Option<PathBuf>,
 
     /// The kmer size used to compute the input unitigs.
     /// This is required when using a fasta file as input.
@@ -110,7 +110,7 @@ pub struct Cli {
 
     /// The command used to run blossom5.
     #[clap(long, default_value = "blossom5")]
-    blossom5_command: String,
+    blossom5_command: PathBuf,
 
     /// The data structure to store the weight of visited nodes in Dijkstra's algorithm.
     #[clap(long, default_value = "EpochNodeWeightArray")]
