@@ -15,7 +15,9 @@ use genome_graph::bigraph::interface::static_bigraph::StaticBigraph;
 use genome_graph::bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
 use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::index::{GraphIndex, OptionalGraphIndex};
-use genome_graph::bigraph::traitgraph::interface::{GraphBase, StaticGraph};
+use genome_graph::bigraph::traitgraph::interface::{
+    GraphBase, ImmutableGraphContainer, StaticGraph,
+};
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use genome_graph::bigraph::traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 use itertools::Itertools;
@@ -26,6 +28,7 @@ use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader, BufWriter};
 use std::marker::PhantomData;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -2043,4 +2046,57 @@ fn compute_matchtigs<
     }
 
     matchtigs
+}
+
+/// Convenience method for [write_duplication_bitvector].
+pub fn write_duplication_bitvector_to_file<
+    'ws,
+    SequenceHandle,
+    EdgeData: MatchtigEdgeData<SequenceHandle>,
+    Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    path: impl AsRef<Path>,
+) -> Result<(), std::io::Error> {
+    write_duplication_bitvector(graph, walks, &mut BufWriter::new(File::create(path)?))
+}
+
+/// Write a bitvector in ASCII format for each walk.
+/// The bitvector contains a 1 for each original kmer, and a 0 for each duplicate kmer.
+/// The bitvectors of different walks are separated by newlines.
+pub fn write_duplication_bitvector<
+    'ws,
+    SequenceHandle,
+    EdgeData: MatchtigEdgeData<SequenceHandle>,
+    Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    writer: &mut impl std::io::Write,
+) -> Result<(), std::io::Error> {
+    for walk in walks.into_iter() {
+        if walk.is_empty() {
+            panic!("Found empty walk when writing duplication bitvector");
+        }
+
+        for edge in walk.iter() {
+            let edge_data = graph.edge_data(*edge);
+            let character = if edge_data.is_original() { '1' } else { '0' };
+
+            for _ in 0..edge_data.weight() {
+                write!(writer, "{}", character)?;
+            }
+        }
+
+        writeln!(writer)?;
+    }
+
+    Ok(())
 }

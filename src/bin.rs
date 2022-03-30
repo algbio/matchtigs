@@ -5,9 +5,9 @@
 #![warn(missing_docs)]
 
 use crate::implementation::{
-    initialise_logging, GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType,
-    MatchtigAlgorithm, MatchtigAlgorithmConfiguration, MatchtigEdgeData, NodeWeightArrayType,
-    PathtigAlgorithm, TigAlgorithm,
+    initialise_logging, write_duplication_bitvector_to_file, GreedytigAlgorithm,
+    GreedytigAlgorithmConfiguration, HeapType, MatchtigAlgorithm, MatchtigAlgorithmConfiguration,
+    MatchtigEdgeData, NodeWeightArrayType, PathtigAlgorithm, TigAlgorithm,
 };
 use clap::Parser;
 use genome_graph::bigraph::interface::BidirectedData;
@@ -46,7 +46,7 @@ mod implementation;
 #[clap(
     version = env!("CARGO_PKG_VERSION"),
     author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>",
-    about = "Matchtigs: optimal plain text compression of kmer sets.",
+    about = "Matchtigs: minimum plain text representation of kmer sets.",
 )]
 pub struct Cli {
     /// GFA file containing the input unitigs.
@@ -87,6 +87,18 @@ pub struct Cli {
     /// Compute matchtigs and write them to the given file in fasta format.
     #[clap(long)]
     matchtigs_fa_out: Option<String>,
+
+    /// Output a file with bitvectors in ASCII format, with a 0 for each duplicated instance of a kmer in the greedytigs.
+    /// The bitvectors are separated by newline characters.
+    /// Taking all kmers with a 1 results in a set of all original kmers with no duplicates.
+    #[clap(long)]
+    greedytigs_duplication_bitvector_out: Option<String>,
+
+    /// Output a file with bitvectors in ASCII format, with a 0 for each duplicated instance of a kmer in the matchtigs.
+    /// The bitvectors are separated by newline characters.
+    /// Taking all kmers with a 1 results in a set of all original kmers with no duplicates.
+    #[clap(long)]
+    matchtigs_duplication_bitvector_out: Option<String>,
 
     /// The kmer size used to compute the input unitigs.
     /// This is required when using a fasta file as input.
@@ -467,9 +479,12 @@ fn main() {
     debug_assert_graph_edge_labels(&graph, &sequence_store, k);
 
     let do_compute_pathtigs = opts.pathtigs_fa_out.is_some() || opts.pathtigs_gfa_out.is_some();
-    let do_compute_greedytigs =
-        opts.greedytigs_fa_out.is_some() || opts.greedytigs_gfa_out.is_some();
-    let do_compute_matchtigs = opts.matchtigs_fa_out.is_some() || opts.matchtigs_gfa_out.is_some();
+    let do_compute_greedytigs = opts.greedytigs_fa_out.is_some()
+        || opts.greedytigs_gfa_out.is_some()
+        || opts.greedytigs_duplication_bitvector_out.is_some();
+    let do_compute_matchtigs = opts.matchtigs_fa_out.is_some()
+        || opts.matchtigs_gfa_out.is_some()
+        || opts.matchtigs_duplication_bitvector_out.is_some();
 
     if do_compute_pathtigs {
         info!("Computing pathtigs");
@@ -530,6 +545,12 @@ fn main() {
                 None,
             );
         }
+
+        if let Some(duplication_bitvector_out) = &opts.greedytigs_duplication_bitvector_out {
+            info!("Writing greedytig duplication bitvector to {duplication_bitvector_out:?}");
+            write_duplication_bitvector_to_file(&graph, &greedytigs, duplication_bitvector_out)
+                .unwrap();
+        }
     }
 
     if do_compute_matchtigs {
@@ -566,6 +587,12 @@ fn main() {
                 gfa_out,
                 None,
             );
+        }
+
+        if let Some(duplication_bitvector_out) = &opts.matchtigs_duplication_bitvector_out {
+            info!("Writing matchtig duplication bitvector to {duplication_bitvector_out:?}");
+            write_duplication_bitvector_to_file(&graph, &matchtigs, duplication_bitvector_out)
+                .unwrap();
         }
     }
 
