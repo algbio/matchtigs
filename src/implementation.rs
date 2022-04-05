@@ -2108,3 +2108,81 @@ fn append_to_filename(path: PathBuf, ext: impl AsRef<OsStr>) -> PathBuf {
     os_string.push(ext.as_ref());
     os_string.into()
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::implementation::{make_graph_eulerian_with_breaking_edges, MatchtigEdgeData};
+    use genome_graph::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+    use genome_graph::bigraph::interface::dynamic_bigraph::DynamicBigraph;
+    use genome_graph::bigraph::interface::static_bigraph::StaticBigraphFromDigraph;
+    use genome_graph::bigraph::interface::BidirectedData;
+    use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
+    use genome_graph::bigraph::traitgraph::interface::MutableGraphContainer;
+    use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    struct TestEdgeData {
+        sequence_handle: usize,
+        forwards: bool,
+        weight: usize,
+        dummy_id: usize,
+    }
+
+    impl DijkstraWeightedEdgeData<usize> for TestEdgeData {
+        fn weight(&self) -> usize {
+            self.weight
+        }
+    }
+
+    impl BidirectedData for TestEdgeData {
+        fn mirror(&self) -> Self {
+            let mut result = self.clone();
+            result.forwards = !result.forwards;
+            result
+        }
+    }
+
+    impl MatchtigEdgeData<usize> for TestEdgeData {
+        fn is_dummy(&self) -> bool {
+            self.dummy_id > 0
+        }
+
+        fn is_forwards(&self) -> bool {
+            self.forwards
+        }
+
+        fn new(sequence_handle: usize, forwards: bool, weight: usize, dummy_id: usize) -> Self {
+            Self {
+                sequence_handle,
+                forwards,
+                weight,
+                dummy_id,
+            }
+        }
+    }
+
+    #[test]
+    fn test_make_graph_eulerian_with_breaking_edges_mirror_nodes() {
+        let mut graph = NodeBigraphWrapper::new(petgraph_impl::new());
+
+        let nodes: Vec<_> = (0..8).map(|_| graph.add_node(())).collect();
+        graph.set_mirror_nodes(nodes[0], nodes[1]);
+        graph.set_mirror_nodes(nodes[2], nodes[2]);
+        graph.set_mirror_nodes(nodes[3], nodes[3]);
+        graph.set_mirror_nodes(nodes[4], nodes[5]);
+        graph.set_mirror_nodes(nodes[6], nodes[6]);
+        graph.set_mirror_nodes(nodes[7], nodes[7]);
+
+        graph.add_edge(nodes[0], nodes[3], TestEdgeData::new(1, true, 0, 1));
+        graph.add_edge(nodes[3], nodes[1], TestEdgeData::new(1, false, 0, 1));
+        graph.add_edge(nodes[2], nodes[0], TestEdgeData::new(2, true, 0, 2));
+        graph.add_edge(nodes[1], nodes[2], TestEdgeData::new(2, false, 0, 2));
+        graph.add_edge(nodes[6], nodes[4], TestEdgeData::new(3, true, 0, 3));
+        graph.add_edge(nodes[5], nodes[6], TestEdgeData::new(3, false, 0, 3));
+        graph.add_edge(nodes[7], nodes[4], TestEdgeData::new(4, true, 0, 4));
+        graph.add_edge(nodes[5], nodes[7], TestEdgeData::new(4, false, 0, 4));
+
+        make_graph_eulerian_with_breaking_edges(&mut graph, 0, &mut 5, 4);
+        println!("{graph:?}");
+    }
+}
