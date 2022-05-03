@@ -4,10 +4,12 @@
 
 #![warn(missing_docs)]
 
+use crate::implementation::greedytigs::{GreedytigAlgorithm, GreedytigAlgorithmConfiguration};
+use crate::implementation::matchtigs::{MatchtigAlgorithm, MatchtigAlgorithmConfiguration};
+use crate::implementation::pathtigs::PathtigAlgorithm;
 use crate::implementation::{
-    initialise_logging, write_duplication_bitvector_to_file, GreedytigAlgorithm,
-    GreedytigAlgorithmConfiguration, HeapType, MatchtigAlgorithm, MatchtigAlgorithmConfiguration,
-    MatchtigEdgeData, NodeWeightArrayType, PathtigAlgorithm, TigAlgorithm,
+    initialise_logging, write_duplication_bitvector_to_file, HeapType, MatchtigEdgeData,
+    NodeWeightArrayType, TigAlgorithm,
 };
 use clap::Parser;
 use genome_graph::bigraph::interface::BidirectedData;

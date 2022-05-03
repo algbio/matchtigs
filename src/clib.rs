@@ -5,9 +5,11 @@
 //! WARNING: These functions have not been tested properly and might produce unexpected results.
 
 use crate::implementation::{
-    initialise_logging, GreedytigAlgorithm, GreedytigAlgorithmConfiguration, HeapType,
-    MatchtigAlgorithm, MatchtigAlgorithmConfiguration, MatchtigEdgeData, NodeWeightArrayType,
-    PathtigAlgorithm, TigAlgorithm,
+    initialise_logging, HeapType, MatchtigEdgeData, NodeWeightArrayType, TigAlgorithm,
+};
+use crate::{
+    GreedytigAlgorithm, GreedytigAlgorithmConfiguration, MatchtigAlgorithm,
+    MatchtigAlgorithmConfiguration, PathtigAlgorithm,
 };
 use disjoint_sets::UnionFind;
 use genome_graph::bigraph::implementation::node_bigraph_wrapper::PetBigraph;

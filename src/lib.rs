@@ -10,7 +10,8 @@ pub mod clib;
 mod implementation;
 
 pub use implementation::{
-    write_duplication_bitvector, write_duplication_bitvector_to_file, GreedytigAlgorithm,
-    GreedytigAlgorithmConfiguration, HeapType, MatchtigAlgorithm, MatchtigAlgorithmConfiguration,
-    NodeWeightArrayType, PathtigAlgorithm, TigAlgorithm,
+    greedytigs::GreedytigAlgorithm, greedytigs::GreedytigAlgorithmConfiguration,
+    matchtigs::MatchtigAlgorithm, matchtigs::MatchtigAlgorithmConfiguration,
+    pathtigs::PathtigAlgorithm, write_duplication_bitvector, write_duplication_bitvector_to_file,
+    HeapType, NodeWeightArrayType, TigAlgorithm,
 };
