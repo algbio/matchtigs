@@ -25,6 +25,7 @@ use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use traitgraph_algo::dijkstra::{DijkstraTargetMap, DijkstraWeightedEdgeData};
 
+pub mod eulertigs;
 pub mod greedytigs;
 pub mod matchtigs;
 pub mod pathtigs;
