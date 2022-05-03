@@ -4,6 +4,7 @@
 
 #![warn(missing_docs)]
 
+use crate::implementation::eulertigs::{EulertigAlgorithm, EulertigAlgorithmConfiguration};
 use crate::implementation::greedytigs::{GreedytigAlgorithm, GreedytigAlgorithmConfiguration};
 use crate::implementation::matchtigs::{MatchtigAlgorithm, MatchtigAlgorithmConfiguration};
 use crate::implementation::pathtigs::PathtigAlgorithm;
@@ -71,6 +72,14 @@ pub struct Cli {
     /// Compute pathtigs and write them to the given file in fasta format.
     #[clap(long)]
     pathtigs_fa_out: Option<PathBuf>,
+
+    /// Compute eulertigs and write them to the given file in GFA format.
+    #[clap(long)]
+    eulertigs_gfa_out: Option<PathBuf>,
+
+    /// Compute eulertigs and write them to the given file in fasta format.
+    #[clap(long)]
+    eulertigs_fa_out: Option<PathBuf>,
 
     /// Compute greedy matchtigs and write them to the given file in GFA format.
     #[clap(long)]
@@ -629,6 +638,7 @@ fn main() {
     }
 
     let do_compute_pathtigs = opts.pathtigs_fa_out.is_some() || opts.pathtigs_gfa_out.is_some();
+    let do_compute_eulertigs = opts.eulertigs_fa_out.is_some() || opts.eulertigs_gfa_out.is_some();
     let do_compute_greedytigs = opts.greedytigs_fa_out.is_some()
         || opts.greedytigs_gfa_out.is_some()
         || opts.greedytigs_duplication_bitvector_out.is_some();
@@ -660,6 +670,34 @@ fn main() {
 
         if opts.debug_print_walks {
             debug_print_walks(&graph, &pathtigs);
+        }
+    }
+
+    if do_compute_eulertigs {
+        info!("Computing eulertigs");
+        let eulertigs =
+            EulertigAlgorithm::compute_tigs(&mut graph, &EulertigAlgorithmConfiguration { k });
+
+        if let Some(fa_out) = &opts.eulertigs_fa_out {
+            info!("Writing eulertigs as fasta to {fa_out:?}");
+            write_walks_fasta(&graph, &eulertigs, &sequence_store, k, fa_out, None);
+        }
+
+        if let Some(gfa_out) = &opts.eulertigs_gfa_out {
+            info!("Writing eulertigs as gfa to {gfa_out:?}");
+            write_walks_gfa(
+                &graph,
+                &eulertigs,
+                &sequence_store,
+                k,
+                &gfa_header,
+                gfa_out,
+                None,
+            );
+        }
+
+        if opts.debug_print_walks {
+            debug_print_walks(&graph, &eulertigs);
         }
     }
 

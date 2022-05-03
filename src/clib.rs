@@ -8,8 +8,9 @@ use crate::implementation::{
     initialise_logging, HeapType, MatchtigEdgeData, NodeWeightArrayType, TigAlgorithm,
 };
 use crate::{
-    GreedytigAlgorithm, GreedytigAlgorithmConfiguration, MatchtigAlgorithm,
-    MatchtigAlgorithmConfiguration, PathtigAlgorithm,
+    EulertigAlgorithm, EulertigAlgorithmConfiguration, GreedytigAlgorithm,
+    GreedytigAlgorithmConfiguration, MatchtigAlgorithm, MatchtigAlgorithmConfiguration,
+    PathtigAlgorithm,
 };
 use disjoint_sets::UnionFind;
 use genome_graph::bigraph::implementation::node_bigraph_wrapper::PetBigraph;
@@ -243,7 +244,7 @@ pub unsafe extern "C" fn matchtigs_build_graph(unitig_weights: *const usize) {
 
 /// Compute tigs in the created graph.
 /// Requires that `matchtigs_build_graph` was called before.
-/// The `tig_algorithm` should be `1` for unitigs, `2` for pathtigs (similar to UST-tigs and simplitigs), `3` for greedy matchtigs and `4` for matchtigs.
+/// The `tig_algorithm` should be `1` for unitigs, `2` for pathtigs (similar to UST-tigs and simplitigs), `3` for eulertigs, `4` for greedy matchtigs and `5` for matchtigs.
 /// `matchtig_file_prefix` must be a path to a file used to communicate with the matcher (blossom5).
 /// `matcher_path` must be a path pointing to a binary of blossom5.
 ///
@@ -324,7 +325,8 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
             })
             .collect(),
         2 => PathtigAlgorithm::compute_tigs(get_graph(), &()),
-        3 => MatchtigAlgorithm::compute_tigs(
+        3 => EulertigAlgorithm::compute_tigs(get_graph(), &EulertigAlgorithmConfiguration { k }),
+        4 => MatchtigAlgorithm::compute_tigs(
             get_graph(),
             &MatchtigAlgorithmConfiguration {
                 threads,
@@ -335,7 +337,7 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
                 matcher_path: &matcher_path,
             },
         ),
-        4 => GreedytigAlgorithm::compute_tigs(
+        5 => GreedytigAlgorithm::compute_tigs(
             get_graph(),
             &GreedytigAlgorithmConfiguration {
                 threads,
