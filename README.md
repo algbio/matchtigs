@@ -5,8 +5,8 @@ The algorithms expect unitigs as an input, which can e.g. be computed with [BCAL
 
 ## Features
 
- * Compute matchtigs, greedy matchtigs or pathtigs (a heuristic similar to [simplitigs](https://doi.org/10.1186/s13059-021-02297-z))
  * Compute matchtigs and greedy matchtigs with multiple threads
+ * Compute pathtigs (a heuristic similar to [simplitigs](https://doi.org/10.1186/s13059-021-02297-z))
  * Both fasta and GFA format supported
  * Output (ASCII-) bitvectors of duplicate kmers for applications that require unique kmers
 
