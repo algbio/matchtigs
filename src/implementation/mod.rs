@@ -667,7 +667,7 @@ mod tests {
     use genome_graph::bigraph::interface::dynamic_bigraph::DynamicBigraph;
     use genome_graph::bigraph::interface::static_bigraph::StaticBigraphFromDigraph;
     use genome_graph::bigraph::interface::BidirectedData;
-    use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
+    use genome_graph::bigraph::traitgraph::implementation::petgraph_impl::PetGraph;
     use genome_graph::bigraph::traitgraph::interface::MutableGraphContainer;
     use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
@@ -714,7 +714,7 @@ mod tests {
 
     #[test]
     fn test_make_graph_eulerian_with_breaking_edges_mirror_nodes() {
-        let mut graph = NodeBigraphWrapper::new(petgraph_impl::new());
+        let mut graph = NodeBigraphWrapper::new(PetGraph::new());
 
         let nodes: Vec<_> = (0..8).map(|_| graph.add_node(())).collect();
         graph.set_mirror_nodes(nodes[0], nodes[1]);

@@ -24,7 +24,9 @@ use genome_graph::compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet
 use genome_graph::compact_genome::interface::alphabet::Alphabet;
 use genome_graph::compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use genome_graph::compact_genome::interface::sequence_store::{HandleWithLength, SequenceStore};
-use genome_graph::io::bcalm2::PlainBCalm2NodeData;
+use genome_graph::io::bcalm2::{
+    read_bigraph_from_bcalm2_as_edge_centric_from_file, PlainBCalm2NodeData,
+};
 use genome_graph::io::fasta::{read_bigraph_from_fasta_as_edge_centric_from_file, FastaNodeData};
 use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
 use genome_graph::io::SequenceData;
@@ -51,19 +53,33 @@ mod implementation;
 )]
 pub struct Cli {
     /// GFA file containing the input unitigs.
-    /// Either a GFA input file or a fasta input file must be given.
-    #[clap(long, conflicts_with = "fa-in", required_unless_present = "fa-in")]
+    /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
+    #[clap(long, conflicts_with_all = &["fa-in", "bcalm-in"], required_unless_present_any = &["fa-in", "bcalm-in"])]
     gfa_in: Option<PathBuf>,
 
     /// Fasta file containing the input unitigs.
-    /// Either a GFA input file or a fasta input file must be given.
+    /// If possible, pass GFA or bcalm2 fasta files, as those contain the topology of the graph,
+    /// speeding up the parsing process.
+    /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
     #[clap(
         long,
-        conflicts_with = "gfa-in",
-        required_unless_present = "gfa-in",
+        conflicts_with_all = &["gfa-in", "bcalm-in"],
+        required_unless_present_any = &["gfa-in", "bcalm-in"],
         requires = "k"
     )]
     fa_in: Option<PathBuf>,
+
+    /// Bcalm2 Fasta file containing the input unitigs.
+    /// Bcalm2 encodes the topology of the graph inside the fasta file, which makes using this
+    /// option faster than `--fa-in` for bcalm2 fasta files.
+    /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
+    #[clap(
+    long,
+    conflicts_with_all = &["fa-in", "gfa-in"],
+    required_unless_present_any = &["fa-in", "gfa-in"],
+    requires = "k"
+    )]
+    bcalm_in: Option<PathBuf>,
 
     /// Compute pathtigs and write them to the given file in GFA format.
     #[clap(long)]
@@ -271,10 +287,9 @@ impl<SequenceHandle> From<FastaNodeData<SequenceHandle>> for CliEdgeData<Sequenc
 /// It uses a petgraph with the CliEdgeData.
 pub type CliGraph<GenomeSequenceStoreHandle> =
     genome_graph::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
-        genome_graph::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+        genome_graph::bigraph::traitgraph::implementation::petgraph_impl::PetGraph<
             (),
             CliEdgeData<GenomeSequenceStoreHandle>,
-            usize,
         >,
     >;
 
@@ -604,6 +619,13 @@ fn main() {
         info!("Reading fa as edge centric bigraph with k = {k} from {fa_in:?}");
         let graph =
             read_bigraph_from_fasta_as_edge_centric_from_file(&fa_in, &mut sequence_store, k)
+                .unwrap();
+        (graph, k, None)
+    } else if let Some(bcalm_in) = &opts.bcalm_in {
+        let k = opts.k.unwrap();
+        info!("Reading bcalm2 fa as edge centric bigraph with k = {k} from {bcalm_in:?}");
+        let graph =
+            read_bigraph_from_bcalm2_as_edge_centric_from_file(&bcalm_in, &mut sequence_store, k)
                 .unwrap();
         (graph, k, None)
     } else {
