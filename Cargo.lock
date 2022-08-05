@@ -474,9 +474,9 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "2.1.0"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eec3032bf1f112264bd622e8a3a424ec94578f99076a8c620e51a52d26bac024"
+checksum = "bb754cfd6ebd4a23ad563f97305e4b75a4e5276009a7d4caa764d3872f7d6c5c"
 dependencies = [
  "anyhow",
  "bigraph",
