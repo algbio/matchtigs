@@ -202,8 +202,6 @@ fn compute_greedytigs<
             distances: &mut Vec<(Graph::NodeIndex, usize)>,
             shortest_paths: &mut Vec<(Graph::NodeIndex, Graph::NodeIndex, usize)>,
             out_nodes: &[Graph::NodeIndex],
-            out_nodes_offset: usize,
-            out_nodes_limit: usize,
             in_node_map: &RelaxedAtomicBoolVec,
             locked_node_multiplicities: &[Mutex<isize>],
             k: usize,
@@ -213,9 +211,8 @@ fn compute_greedytigs<
             total_dijkstras: usize,
         ) {
             let mut last_output = 0;
-            let local_out_nodes = &out_nodes[out_nodes_offset..out_nodes_limit];
 
-            for (i, &out_node) in local_out_nodes.iter().enumerate() {
+            for (i, &out_node) in out_nodes.iter().enumerate() {
                 let out_node_is_self_mirror = graph.is_self_mirror_node(out_node);
                 let out_node_mirror = graph.mirror_node(out_node).unwrap();
                 // The linter suggestion to use atomic values for locked_node_multiplicities here is spurious,
@@ -475,9 +472,7 @@ fn compute_greedytigs<
                             &mut dijkstra,
                             &mut distances,
                             &mut shortest_paths,
-                            &out_nodes,
-                            current_offset,
-                            current_limit,
+                            &out_nodes[current_offset..current_limit],
                             &in_node_map,
                             &locked_node_multiplicities,
                             k,
