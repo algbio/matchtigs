@@ -20,6 +20,7 @@ use std::collections::BTreeMap;
 use std::ffi::{OsStr, OsString};
 use std::fs::File;
 use std::io::BufWriter;
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -104,6 +105,29 @@ impl FromStr for HeapType {
     }
 }
 
+/// The performance data collector used by Dijkstra's algorithm.
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+pub enum PerformanceDataType {
+    /// Collect no performance data.
+    None,
+    /// Collect all possible performance data.
+    Complete,
+}
+
+impl FromStr for PerformanceDataType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "None" => Self::None,
+            "Complete" => Self::Complete,
+            other => {
+                return Err(format!("Unknown performance data type: {other}"));
+            }
+        })
+    }
+}
+
 pub struct RelaxedAtomicBoolVec {
     map: Vec<AtomicBool>,
 }
@@ -125,6 +149,36 @@ impl RelaxedAtomicBoolVec {
 
     /*pub fn swap(&self, index: usize, value: bool) -> bool {
         self.map[index].swap(value, Ordering::Relaxed)
+    }*/
+
+    pub fn reinitialise(&mut self, len: usize) {
+        self.map.clear();
+        self.map
+            .extend(std::iter::repeat(false).map(Into::into).take(len));
+    }
+
+    pub fn slice(&self, range: Range<usize>) -> RelaxedAtomicBoolSlice {
+        RelaxedAtomicBoolSlice {
+            map: &self.map[range],
+        }
+    }
+
+    pub fn iter(&self) -> impl '_ + Iterator<Item = bool> {
+        self.map.iter().map(|b| b.load(Ordering::Relaxed))
+    }
+}
+
+pub struct RelaxedAtomicBoolSlice<'a> {
+    map: &'a [AtomicBool],
+}
+
+impl<'a> RelaxedAtomicBoolSlice<'a> {
+    pub fn set(&self, index: usize, value: bool) {
+        self.map[index].store(value, Ordering::Relaxed);
+    }
+
+    /*pub fn get(&self, index: usize) -> bool {
+        self.map[index].load(Ordering::Relaxed)
     }*/
 }
 

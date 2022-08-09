@@ -29,8 +29,8 @@ lto = true
 debug = true
 
 [dependencies]
-genome-graph = "2.1.2"
-traitgraph-algo = {version = "2.0.0", features = ["hashbrown_dijkstra_node_weight_array"]}
+genome-graph = {version = "3.0.0", features = ["traitgraph-algo"]}
+traitgraph-algo = {version = "5.1.0", features = ["hashbrown_dijkstra_node_weight_array"]}
 log = "0.4.14"
 simplelog = "0.12.0"
 clap = {version = "3.2.16", features = ["derive"]}

@@ -10,7 +10,7 @@ use crate::implementation::matchtigs::{MatchtigAlgorithm, MatchtigAlgorithmConfi
 use crate::implementation::pathtigs::PathtigAlgorithm;
 use crate::implementation::{
     initialise_logging, write_duplication_bitvector_to_file, HeapType, MatchtigEdgeData,
-    NodeWeightArrayType, TigAlgorithm,
+    NodeWeightArrayType, PerformanceDataType, TigAlgorithm,
 };
 use clap::Parser;
 use genome_graph::bigraph::interface::BidirectedData;
@@ -146,6 +146,32 @@ pub struct Cli {
     /// The heap data structure used by Dijkstra's algorithm.
     #[clap(long, default_value = "StdBinaryHeap")]
     dijkstra_heap_type: HeapType,
+
+    /// The performance data collector used by Dijkstra's algorithm.
+    #[clap(long, default_value = "None")]
+    dijkstra_performance_data_type: PerformanceDataType,
+
+    /// If given enables staged parallelism mode.
+    /// In this mode, the Dijkstras are executed first with full parallelism
+    /// (according to the given number of threads) but with limited memory resources
+    /// (see `--dijkstra-resource-limit-factor`).
+    /// Then the number of threads is divided by this number, and the Dijkstras that
+    /// failed before due to resource limitations are retried with more resources.
+    /// The resources are increased relative to the number of threads, i.e. if the number
+    /// of threads is divided by four, then the resources each thread has is multiplied by four.
+    #[clap(long)]
+    dijkstra_staged_parallelism_divisor: Option<f64>,
+
+    /// Limits the memory used by each Dijkstra execution if in staged parallelism mode
+    /// (see `--dijkstra-staged-parallelism-divisor`).
+    /// Each thread is allowed to use queue space as well as distance array space to store up to
+    /// `NODES * FACTOR / THREADS` nodes.
+    /// `NODES` is the number of nodes, `FACTOR` is the factor given by this parameter,
+    /// and `THREADS` is the number of threads.
+    /// The number of threads decreases in each stage of execution as described in
+    /// `--dijkstra-staged-parallelism-divisor`.
+    #[clap(long, default_value = "1")]
+    dijkstra_resource_limit_factor: usize,
 
     /// Print the de Bruijn graph constructed from the input unitigs.
     #[clap(long)]
@@ -400,7 +426,7 @@ pub fn write_walks_fasta<
                 "| {}{} {} ",
                 first_edge.as_usize(),
                 if first_data.is_forwards() { "f" } else { "r" },
-                first_data_sequence
+                first_data_sequence,
             )
             .unwrap();
         }
@@ -417,7 +443,7 @@ pub fn write_walks_fasta<
                         debug_writer,
                         "| skip dummy {} weight {} ",
                         current.as_usize(),
-                        current_data.weight()
+                        current_data.weight(),
                     )
                     .unwrap();
                 }
@@ -478,7 +504,9 @@ pub fn write_walks_gfa<
     header: &Option<String>,
     file_path: P,
     debug_file_path: Option<&str>,
-) {
+)
+//where <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef: Index<RangeFrom<usize>,Output =<GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef >,
+{
     let mut writer = BufWriter::new(File::create(file_path).unwrap());
     let mut debug_writer = debug_file_path
         .map(|debug_file_path| BufWriter::new(File::create(debug_file_path).unwrap()));
@@ -515,7 +543,7 @@ pub fn write_walks_gfa<
                 "| {}{} {} ",
                 first_edge.as_usize(),
                 if first_data.is_forwards() { "f" } else { "r" },
-                first_data_sequence
+                first_data_sequence,
             )
             .unwrap();
         }
@@ -532,7 +560,7 @@ pub fn write_walks_gfa<
                         debug_writer,
                         "| skip dummy {} weight {} ",
                         current.as_usize(),
-                        current_data.weight()
+                        current_data.weight(),
                     )
                     .unwrap();
                 }
@@ -546,9 +574,8 @@ pub fn write_walks_gfa<
                 k - 1 - previous_data.weight()
             };
 
-            let current_data_sequence: DefaultGenome<AlphabetType> =
-                current_data.sequence_owned(source_sequence_store);
-            let current_data_sequence = &current_data_sequence[offset..].as_string();
+            let current_data_sequence = current_data.sequence_ref(source_sequence_store).unwrap();
+            let current_data_sequence = &current_data_sequence[offset..current_data_sequence.len()];
 
             if let Some(debug_writer) = &mut debug_writer {
                 write!(
@@ -557,12 +584,24 @@ pub fn write_walks_gfa<
                     current.as_usize(),
                     if current_data.is_forwards() { "f" } else { "r" },
                     offset,
-                    current_data_sequence
+                    String::from_utf8(
+                        current_data_sequence
+                            .iter()
+                            .cloned()
+                            .map(AlphabetType::character_to_ascii)
+                            .collect::<Vec<_>>()
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
             }
 
-            write!(writer, "{}", current_data_sequence).unwrap();
+            for character in current_data_sequence.iter() {
+                writer
+                    .write_all(&[AlphabetType::character_to_ascii(character.clone())])
+                    .unwrap();
+            }
+            //write!(writer, "{}", current_data_sequence).unwrap();
 
             previous = current;
         }
@@ -737,8 +776,11 @@ fn main() {
             &GreedytigAlgorithmConfiguration {
                 threads: opts.threads,
                 k,
+                staged_parallelism_divisor: opts.dijkstra_staged_parallelism_divisor,
+                resource_limit_factor: opts.dijkstra_resource_limit_factor,
                 heap_type: opts.dijkstra_heap_type,
                 node_weight_array_type: opts.dijkstra_node_weight_array_type,
+                performance_data_type: opts.dijkstra_performance_data_type,
             },
         );
 

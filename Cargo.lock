@@ -474,9 +474,9 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "2.1.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8602d3886a1e983250a0ce58967edb87408c25679253aa62c87679d7f9e7015"
+checksum = "c7f6fc9d56bc14fc632e7834937df386d6d785f14a81fe8987092794035c61f9"
 dependencies = [
  "anyhow",
  "bigraph",
@@ -1200,9 +1200,9 @@ dependencies = [
 
 [[package]]
 name = "traitgraph-algo"
-version = "2.0.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb4dda3512032972593e204b2613fedb0de4202e0f852893a0e69296dc0cfd8f"
+checksum = "ba65b270ccda2fd782f81d61a1e9037b2131de8e1cc4a9eb6db3722af31772bd"
 dependencies = [
  "hashbrown",
  "rand",

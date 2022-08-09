@@ -25,6 +25,7 @@ use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use std::time::Instant;
 use traitgraph_algo::dijkstra::epoch_array_dijkstra_node_weight_array::EpochNodeWeightArray;
+use traitgraph_algo::dijkstra::performance_counters::NoopDijkstraPerformanceCounter;
 use traitgraph_algo::dijkstra::{
     DefaultDijkstra, Dijkstra, DijkstraHeap, DijkstraWeightedEdgeData, NodeWeightArray,
 };
@@ -243,6 +244,9 @@ fn compute_matchtigs<
                     k - 1,
                     true,
                     &mut distances,
+                    usize::MAX,
+                    usize::MAX,
+                    NoopDijkstraPerformanceCounter,
                 );
                 dijkstra_time += (Instant::now() - dijkstra_start).as_nanos();
                 for &(target_node, weight) in &distances {
@@ -368,6 +372,9 @@ fn compute_matchtigs<
                         k - 1,
                         true,
                         distances,
+                        usize::MAX,
+                        usize::MAX,
+                        NoopDijkstraPerformanceCounter,
                     );
                     for &(in_node, distance) in distances.iter() {
                         shortest_paths.push((out_node, in_node, distance));

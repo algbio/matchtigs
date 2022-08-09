@@ -5,7 +5,8 @@
 //! WARNING: These functions have not been tested properly and might produce unexpected results.
 
 use crate::implementation::{
-    initialise_logging, HeapType, MatchtigEdgeData, NodeWeightArrayType, TigAlgorithm,
+    initialise_logging, HeapType, MatchtigEdgeData, NodeWeightArrayType, PerformanceDataType,
+    TigAlgorithm,
 };
 use crate::{
     EulertigAlgorithm, EulertigAlgorithmConfiguration, GreedytigAlgorithm,
@@ -342,8 +343,11 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
             &GreedytigAlgorithmConfiguration {
                 threads,
                 k,
+                staged_parallelism_divisor: None,
+                resource_limit_factor: 1,
                 heap_type: HeapType::StdBinaryHeap,
                 node_weight_array_type: NodeWeightArrayType::EpochNodeWeightArray,
+                performance_data_type: PerformanceDataType::None,
             },
         ),
         tig_algorithm => panic!("Unknown tigs algorithm identifier {}", tig_algorithm),
