@@ -7,7 +7,7 @@ The algorithms expect unitigs as an input, which can e.g. be computed with [BCAL
 
  * Compute [matchtigs and greedy matchtigs](https://doi.org/10.1101/2021.12.15.472871) with multiple threads
  * Compute Eulertigs
- * Compute pathtigs (a heuristic similar to [simplitigs](https://doi.org/10.1186/s13059-021-02297-z))
+ * Compute pathtigs (heuristical Eulertigs similar to [ProphAsm](https://doi.org/10.1186/s13059-021-02297-z))
  * Both fasta and GFA format supported
  * Output (ASCII-) bitvectors of duplicate kmers for applications that require unique kmers
 
@@ -43,6 +43,11 @@ Computing Eulertigs from a GFA file and saving them as both GFA (without topolog
 matchtigs --fa-in unitigs.fa --eulertigs-gfa-out eulertigs.gfa --eulertigs-fa-out eulertigs.fa
 ```
 
+**Note:** when computing unitigs with bcalm2, it is much faster to use `--bcalm-in`:
+```bash
+matchtigs --bcalm-in unitigs.fa --eulertigs-gfa-out eulertigs.gfa --eulertigs-fa-out eulertigs.fa
+```
+
 Use the `--help` option to get an overview of available options.
 ```bash
 matchtigs --help
@@ -50,6 +55,10 @@ matchtigs --help
 
 ## Citation
 
-**preprint**
+**matchtigs preprint**
 
 Schmidt, S., Khan, S., Alanko, J., & Tomescu, A. I. (2021). Matchtigs: minimum plain text representation of kmer sets. _bioRxiv_. [https://doi.org/10.1101/2021.12.15.472871](https://doi.org/10.1101/2021.12.15.472871).
+
+**Eulertigs preprint (accepted at WABI 2022)**
+
+Schmidt, S. and Alanko, J. (2022). Eulertigs: minimum plain text representation of k-mer sets without repetitions in linear time. _bioRxiv_. [https://doi.org/10.1101/2022.05.17.492399](https://doi.org/10.1101/2022.05.17.492399).
