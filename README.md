@@ -1,4 +1,4 @@
-# Matchtigs: minimum plain text representation of kmer sets
+# Matchtigs & Eulertigs: minimum plain text representation of kmer sets - with and without repetitions
 
 This is an implementation of different algorithms for computing small and minimum plain text representations of kmer sets.
 The algorithms expect unitigs as an input, which can e.g. be computed with [BCALM2](https://github.com/GATB/bcalm).
