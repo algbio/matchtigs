@@ -30,12 +30,12 @@ use genome_graph::io::bcalm2::{
 use genome_graph::io::fasta::{read_bigraph_from_fasta_as_edge_centric_from_file, FastaNodeData};
 use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
 use genome_graph::io::SequenceData;
+use log::LevelFilter;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use log::LevelFilter;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
@@ -578,34 +578,64 @@ pub fn write_walks_gfa<
                 k - 1 - previous_data.weight()
             };
 
-            let current_data_sequence = current_data.sequence_ref(source_sequence_store).unwrap();
-            let current_data_sequence = &current_data_sequence[offset..current_data_sequence.len()];
+            if let Some(current_data_sequence) = current_data.sequence_ref(source_sequence_store) {
+                let current_data_sequence =
+                    &current_data_sequence[offset..current_data_sequence.len()];
 
-            if let Some(debug_writer) = &mut debug_writer {
-                write!(
-                    debug_writer,
-                    "| {}{}:off {} {} ",
-                    current.as_usize(),
-                    if current_data.is_forwards() { "f" } else { "r" },
-                    offset,
-                    String::from_utf8(
-                        current_data_sequence
-                            .iter()
-                            .cloned()
-                            .map(AlphabetType::character_to_ascii)
-                            .collect::<Vec<_>>()
+                if let Some(debug_writer) = &mut debug_writer {
+                    write!(
+                        debug_writer,
+                        "| {}{}:off {} {} ",
+                        current.as_usize(),
+                        if current_data.is_forwards() { "f" } else { "r" },
+                        offset,
+                        String::from_utf8(
+                            current_data_sequence
+                                .iter()
+                                .cloned()
+                                .map(AlphabetType::character_to_ascii)
+                                .collect::<Vec<_>>()
+                        )
+                        .unwrap(),
                     )
-                    .unwrap(),
-                )
-                .unwrap();
-            }
-
-            for character in current_data_sequence.iter() {
-                writer
-                    .write_all(&[AlphabetType::character_to_ascii(character.clone())])
                     .unwrap();
+                }
+
+                for character in current_data_sequence.iter() {
+                    writer
+                        .write_all(&[AlphabetType::character_to_ascii(character.clone())])
+                        .unwrap();
+                }
+            } else {
+                assert!(current_data.is_backwards());
+
+                let handle = current_data.sequence_handle();
+                let sequence_ref = source_sequence_store.get(handle);
+
+                if let Some(debug_writer) = &mut debug_writer {
+                    write!(
+                        debug_writer,
+                        "| {}{}:off {} {} ",
+                        current.as_usize(),
+                        if current_data.is_forwards() { "f" } else { "r" },
+                        offset,
+                        String::from_utf8(
+                            sequence_ref
+                                .reverse_complement_iter()
+                                .map(AlphabetType::character_to_ascii)
+                                .collect::<Vec<_>>()
+                        )
+                        .unwrap(),
+                    )
+                    .unwrap();
+                }
+
+                for character in sequence_ref.reverse_complement_iter() {
+                    writer
+                        .write_all(&[AlphabetType::character_to_ascii(character)])
+                        .unwrap();
+                }
             }
-            //write!(writer, "{}", current_data_sequence).unwrap();
 
             previous = current;
         }
