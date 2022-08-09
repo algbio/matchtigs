@@ -323,7 +323,7 @@ fn compute_greedytigs<
                     if distances.is_empty() {
                         missed_nodes.set(
                             i,
-                            dijkstra_status.exhaustiveness == DijkstraExhaustiveness::Complete,
+                            dijkstra_status.exhaustiveness != DijkstraExhaustiveness::Complete,
                         );
 
                         // If no in_nodes are reachable, fix this with breaking dummy arcs in post-processing
@@ -489,7 +489,7 @@ fn compute_greedytigs<
                     if abort_after_this {
                         missed_nodes.set(
                             i,
-                            dijkstra_status.exhaustiveness == DijkstraExhaustiveness::Complete,
+                            dijkstra_status.exhaustiveness != DijkstraExhaustiveness::Complete,
                         );
 
                         break;

@@ -35,6 +35,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use log::LevelFilter;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
@@ -45,7 +46,7 @@ extern crate log;
 mod implementation;
 
 /// The command line parser.
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[clap(
     version = env!("CARGO_PKG_VERSION"),
     author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>",
@@ -180,6 +181,9 @@ pub struct Cli {
     /// Print the tigs as sequences of edge ids.
     #[clap(long)]
     debug_print_walks: bool,
+
+    #[clap(long, default_value = "Info")]
+    log_level: LevelFilter,
 }
 
 /// Edge data of a graph.
@@ -635,8 +639,10 @@ fn debug_print_walks<
 }
 
 fn main() {
-    initialise_logging();
     let opts: Cli = Cli::parse();
+    initialise_logging();
+
+    debug!("Command line options:\n{opts:#?}");
 
     // Load graph
     let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
