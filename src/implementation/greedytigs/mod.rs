@@ -513,9 +513,6 @@ fn compute_greedytigs<
         let dijkstra_start = Instant::now();
 
         let results = Mutex::new(Vec::new());
-        // The linter suggestion to use an atomic value instead of the mutex lock here does not work,
-        // as we increment the value based on its current value.
-        let offset = Mutex::new(0);
         let shared_graph = &*graph;
         let mut dijkstra_performance = DijkstraPerformance::default();
 
@@ -542,6 +539,7 @@ fn compute_greedytigs<
                         .saturating_mul(configuration.resource_limit_factor)
                         / threads
                 };
+            let offset = Mutex::new(0);
 
             crossbeam::scope(|scope| {
                 info!("Starting {threads} dijkstra threads with a resource limit of {resource_limit} each");
