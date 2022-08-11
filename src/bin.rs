@@ -36,6 +36,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 #[macro_use]
@@ -675,6 +676,7 @@ fn main() {
     debug!("Command line options:\n{opts:#?}");
 
     // Load graph
+    let load_start_time = Instant::now();
     let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
     let (mut graph, k, gfa_header): (CliGraph<_>, _, _) = if let Some(gfa_in) = &opts.gfa_in {
@@ -706,6 +708,11 @@ fn main() {
     } else {
         unreachable!("Excluded by cli conditions");
     };
+    let load_end_time = Instant::now();
+    info!(
+        "Loading took {:.1} seconds",
+        (load_end_time - load_start_time).as_secs_f64()
+    );
 
     let unitigs_size_in_memory = sequence_store.size_in_memory();
     let unitigs_size_in_memory_mib = unitigs_size_in_memory / (1024 * 1024);
@@ -743,10 +750,13 @@ fn main() {
         || opts.matchtigs_gfa_out.is_some()
         || opts.matchtigs_duplication_bitvector_out.is_some();
 
-    if do_compute_pathtigs {
+    let pathtigs_times = if do_compute_pathtigs {
         info!("Computing pathtigs");
+        let compute_start_time = Instant::now();
         let pathtigs = PathtigAlgorithm::compute_tigs(&mut graph, &());
+        let compute_end_time = Instant::now();
 
+        let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.pathtigs_fa_out {
             info!("Writing pathtigs as fasta to {fa_out:?}");
             write_walks_fasta(&graph, &pathtigs, &sequence_store, k, fa_out, None);
@@ -768,13 +778,24 @@ fn main() {
         if opts.debug_print_walks {
             debug_print_walks(&graph, &pathtigs);
         }
-    }
 
-    if do_compute_eulertigs {
+        let write_end_time = Instant::now();
+        Some((
+            (compute_end_time - compute_start_time).as_secs_f64(),
+            (write_end_time - write_start_time).as_secs_f64(),
+        ))
+    } else {
+        None
+    };
+
+    let eulertigs_times = if do_compute_eulertigs {
         info!("Computing eulertigs");
+        let compute_start_time = Instant::now();
         let eulertigs =
             EulertigAlgorithm::compute_tigs(&mut graph, &EulertigAlgorithmConfiguration { k });
+        let compute_end_time = Instant::now();
 
+        let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.eulertigs_fa_out {
             info!("Writing eulertigs as fasta to {fa_out:?}");
             write_walks_fasta(&graph, &eulertigs, &sequence_store, k, fa_out, None);
@@ -796,17 +817,31 @@ fn main() {
         if opts.debug_print_walks {
             debug_print_walks(&graph, &eulertigs);
         }
-    }
 
+        let write_end_time = Instant::now();
+        Some((
+            (compute_end_time - compute_start_time).as_secs_f64(),
+            (write_end_time - write_start_time).as_secs_f64(),
+        ))
+    } else {
+        None
+    };
+
+    let compute_weights_start_time = Instant::now();
     if do_compute_greedytigs || do_compute_matchtigs {
         // Find shortest paths between nodes with missing edges
         info!("Computing edge weights for shortest path queries");
         compute_edge_weights(&mut graph, k);
     }
+    let compute_weights_end_time = Instant::now();
+    let compute_weights_seconds =
+        (compute_weights_end_time - compute_weights_start_time).as_secs_f64();
 
-    if do_compute_greedytigs {
+    let greedytigs_times = if do_compute_greedytigs {
         info!("Computing greedytigs");
         let mut graph = graph.clone();
+        // Do not count cloning graph, as it is only necessary if multiple different tigs are computed
+        let compute_start_time = Instant::now();
         let greedytigs = GreedytigAlgorithm::compute_tigs(
             &mut graph,
             &GreedytigAlgorithmConfiguration {
@@ -819,7 +854,9 @@ fn main() {
                 performance_data_type: opts.dijkstra_performance_data_type,
             },
         );
+        let compute_end_time = Instant::now();
 
+        let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.greedytigs_fa_out {
             info!("Writing greedytigs as fasta to {fa_out:?}");
             write_walks_fasta(&graph, &greedytigs, &sequence_store, k, fa_out, None);
@@ -847,11 +884,21 @@ fn main() {
         if opts.debug_print_walks {
             debug_print_walks(&graph, &greedytigs);
         }
-    }
 
-    if do_compute_matchtigs {
+        let write_end_time = Instant::now();
+        Some((
+            (compute_end_time - compute_start_time).as_secs_f64() + compute_weights_seconds,
+            (write_end_time - write_start_time).as_secs_f64(),
+        ))
+    } else {
+        None
+    };
+
+    let matchtigs_times = if do_compute_matchtigs {
         info!("Computing matchtigs");
         let mut graph = graph.clone();
+        // Do not count cloning graph, as it is only necessary if multiple different tigs are computed
+        let compute_start_time = Instant::now();
         let matchtigs = MatchtigAlgorithm::compute_tigs(
             &mut graph,
             &MatchtigAlgorithmConfiguration {
@@ -866,7 +913,9 @@ fn main() {
                 matcher_path: &opts.blossom5_command,
             },
         );
+        let compute_end_time = Instant::now();
 
+        let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.matchtigs_fa_out {
             info!("Writing matchtigs as fasta to {fa_out:?}");
             write_walks_fasta(&graph, &matchtigs, &sequence_store, k, fa_out, None);
@@ -894,6 +943,27 @@ fn main() {
         if opts.debug_print_walks {
             debug_print_walks(&graph, &matchtigs);
         }
+
+        let write_end_time = Instant::now();
+        Some((
+            (compute_end_time - compute_start_time).as_secs_f64() + compute_weights_seconds,
+            (write_end_time - write_start_time).as_secs_f64(),
+        ))
+    } else {
+        None
+    };
+
+    if let Some((pathtigs_compute_time, pathtigs_write_time)) = pathtigs_times {
+        info!("Computing pathtigs took {pathtigs_compute_time:.1}s and writing took {pathtigs_write_time:.1}s")
+    }
+    if let Some((eulertigs_compute_time, eulertigs_write_time)) = eulertigs_times {
+        info!("Computing eulertigs took {eulertigs_compute_time:.1}s and writing took {eulertigs_write_time:.1}s")
+    }
+    if let Some((greedytigs_compute_time, greedytigs_write_time)) = greedytigs_times {
+        info!("Computing greedytigs took {greedytigs_compute_time:.1}s and writing took {greedytigs_write_time:.1}s")
+    }
+    if let Some((matchtigs_compute_time, matchtigs_write_time)) = matchtigs_times {
+        info!("Computing matchtigs took {matchtigs_compute_time:.1}s and writing took {matchtigs_write_time:.1}s")
     }
 
     info!("Done");
