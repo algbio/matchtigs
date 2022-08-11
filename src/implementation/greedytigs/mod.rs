@@ -638,6 +638,24 @@ fn compute_greedytigs<
                 unnecessary_heap_elements as f64 / iterations as f64
             );
         }
+        if let Some(max_max_heap_size) = dijkstra_performance.max_max_heap_size() {
+            info!("Dijktras had a maximum maximum heap size of {max_max_heap_size}");
+        }
+        if let Some(max_max_distance_array_size) =
+            dijkstra_performance.max_max_distance_array_size()
+        {
+            info!("Dijktras had a maximum maximum distance array size of {max_max_distance_array_size}");
+        }
+        if let Some(average_max_heap_size) = dijkstra_performance.average_max_heap_size() {
+            info!("Dijktras had an average maximum heap size of {average_max_heap_size:.0}");
+        }
+        if let Some(average_max_distance_array_size) =
+            dijkstra_performance.average_max_distance_array_size()
+        {
+            info!(
+                "Dijktras had an average maximum heap size of {average_max_distance_array_size:.0}"
+            );
+        }
 
         info!("Found {} shortest paths", results.len());
         let dijkstra_time = (Instant::now() - dijkstra_start).as_nanos();
