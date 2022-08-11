@@ -462,23 +462,65 @@ pub fn write_walks_fasta<
                 k - 1 - previous_data.weight()
             };
 
-            let current_data_sequence: DefaultGenome<AlphabetType> =
-                current_data.sequence_owned(source_sequence_store);
-            let current_data_sequence = &current_data_sequence[offset..].as_string();
+            if let Some(current_data_sequence) = current_data.sequence_ref(source_sequence_store) {
+                let current_data_sequence =
+                    &current_data_sequence[offset..current_data_sequence.len()];
 
-            if let Some(debug_writer) = &mut debug_writer {
-                write!(
-                    debug_writer,
-                    "| {}{}:off {} {} ",
-                    current.as_usize(),
-                    if current_data.is_forwards() { "f" } else { "r" },
-                    offset,
-                    current_data_sequence
-                )
-                .unwrap();
+                if let Some(debug_writer) = &mut debug_writer {
+                    write!(
+                        debug_writer,
+                        "| {}{}:off {} {} ",
+                        current.as_usize(),
+                        if current_data.is_forwards() { "f" } else { "r" },
+                        offset,
+                        String::from_utf8(
+                            current_data_sequence
+                                .iter()
+                                .cloned()
+                                .map(AlphabetType::character_to_ascii)
+                                .collect::<Vec<_>>()
+                        )
+                        .unwrap(),
+                    )
+                    .unwrap();
+                }
+
+                for character in current_data_sequence.iter() {
+                    writer
+                        .write_all(&[AlphabetType::character_to_ascii(character.clone())])
+                        .unwrap();
+                }
+            } else {
+                assert!(current_data.is_backwards());
+
+                let handle = current_data.sequence_handle();
+                let sequence_ref = source_sequence_store.get(handle);
+                let sequence_ref = &sequence_ref[0..sequence_ref.len() - offset];
+
+                if let Some(debug_writer) = &mut debug_writer {
+                    write!(
+                        debug_writer,
+                        "| {}{}:off {} {} ",
+                        current.as_usize(),
+                        if current_data.is_forwards() { "f" } else { "r" },
+                        offset,
+                        String::from_utf8(
+                            sequence_ref
+                                .reverse_complement_iter()
+                                .map(AlphabetType::character_to_ascii)
+                                .collect::<Vec<_>>()
+                        )
+                        .unwrap(),
+                    )
+                    .unwrap();
+                }
+
+                for character in sequence_ref.reverse_complement_iter() {
+                    writer
+                        .write_all(&[AlphabetType::character_to_ascii(character)])
+                        .unwrap();
+                }
             }
-
-            write!(writer, "{}", current_data_sequence).unwrap();
 
             previous = current;
         }
@@ -612,6 +654,7 @@ pub fn write_walks_gfa<
 
                 let handle = current_data.sequence_handle();
                 let sequence_ref = source_sequence_store.get(handle);
+                let sequence_ref = &sequence_ref[0..sequence_ref.len() - offset];
 
                 if let Some(debug_writer) = &mut debug_writer {
                     write!(
