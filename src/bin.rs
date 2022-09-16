@@ -142,7 +142,7 @@ pub struct Cli {
     blossom5_command: PathBuf,
 
     /// The data structure to store the weight of visited nodes in Dijkstra's algorithm.
-    #[clap(long, default_value = "EpochNodeWeightArray")]
+    #[clap(long, default_value = "HashbrownHashMap")]
     dijkstra_node_weight_array_type: NodeWeightArrayType,
 
     /// The heap data structure used by Dijkstra's algorithm.
