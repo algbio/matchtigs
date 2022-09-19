@@ -712,6 +712,14 @@ fn debug_print_walks<
     }
 }
 
+fn log_mem(label: &str) {
+    if let Some(usage) = memory_stats::memory_stats() {
+        println!("{label} memory usage: {}", usage.physical_mem);
+    } else {
+        println!("Couldn't get {label} memory usage :(");
+    }
+}
+
 fn main() {
     let opts: Cli = Cli::parse();
     initialise_logging();
@@ -721,6 +729,7 @@ fn main() {
     // Load graph
     let load_start_time = Instant::now();
     let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
+    log_mem("Initial");
 
     let (mut graph, k, gfa_header): (CliGraph<_>, _, _) = if let Some(gfa_in) = &opts.gfa_in {
         info!("Reading gfa as edge centric bigraph from {gfa_in:?}");
@@ -756,6 +765,7 @@ fn main() {
         "Loading took {:.1} seconds",
         (load_end_time - load_start_time).as_secs_f64()
     );
+    log_mem("After load");
 
     let unitigs_size_in_memory = sequence_store.size_in_memory();
     let unitigs_size_in_memory_mib = unitigs_size_in_memory / (1024 * 1024);
@@ -823,6 +833,7 @@ fn main() {
         }
 
         let write_end_time = Instant::now();
+        log_mem("After pathtigs");
         Some((
             (compute_end_time - compute_start_time).as_secs_f64(),
             (write_end_time - write_start_time).as_secs_f64(),
@@ -862,6 +873,7 @@ fn main() {
         }
 
         let write_end_time = Instant::now();
+        log_mem("After Eulertigs");
         Some((
             (compute_end_time - compute_start_time).as_secs_f64(),
             (write_end_time - write_start_time).as_secs_f64(),
@@ -875,6 +887,7 @@ fn main() {
         // Find shortest paths between nodes with missing edges
         info!("Computing edge weights for shortest path queries");
         compute_edge_weights(&mut graph, k);
+        log_mem("After edge weights");
     }
     let compute_weights_end_time = Instant::now();
     let compute_weights_seconds =
@@ -929,6 +942,7 @@ fn main() {
         }
 
         let write_end_time = Instant::now();
+        log_mem("After greedytigs");
         Some((
             (compute_end_time - compute_start_time).as_secs_f64() + compute_weights_seconds,
             (write_end_time - write_start_time).as_secs_f64(),
@@ -988,6 +1002,7 @@ fn main() {
         }
 
         let write_end_time = Instant::now();
+        log_mem("After matchtigs");
         Some((
             (compute_end_time - compute_start_time).as_secs_f64() + compute_weights_seconds,
             (write_end_time - write_start_time).as_secs_f64(),
@@ -1008,6 +1023,7 @@ fn main() {
     if let Some((matchtigs_compute_time, matchtigs_write_time)) = matchtigs_times {
         info!("Computing matchtigs took {matchtigs_compute_time:.1}s and writing took {matchtigs_write_time:.1}s")
     }
+    log_mem("Final");
 
     info!("Done");
 }
