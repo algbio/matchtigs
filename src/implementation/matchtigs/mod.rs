@@ -16,6 +16,7 @@ use genome_graph::bigraph::traitgraph::index::{GraphIndex, OptionalGraphIndex};
 use genome_graph::bigraph::traitgraph::interface::{GraphBase, StaticGraph};
 use genome_graph::bigraph::traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 use itertools::Itertools;
+use log::{debug, error, info, warn};
 use std::collections::{BinaryHeap, HashMap};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};

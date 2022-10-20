@@ -15,6 +15,7 @@ use genome_graph::bigraph::traitgraph::interface::{GraphBase, ImmutableGraphCont
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use genome_graph::bigraph::traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 use itertools::Itertools;
+use log::{info, warn};
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use std::collections::BTreeMap;
 use std::ffi::{OsStr, OsString};

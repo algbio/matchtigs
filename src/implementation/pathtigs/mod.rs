@@ -4,6 +4,7 @@ use genome_graph::bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
 use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::interface::GraphBase;
 use genome_graph::bigraph::traitgraph::walks::VecEdgeWalk;
+use log::info;
 
 /// The pathtig algorithm computes a heuristically small set of edge-disjoint paths, similar to simplitigs and UST-tigs.
 /// This algorithm does not alter the graph.

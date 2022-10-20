@@ -13,6 +13,7 @@ use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::index::{GraphIndex, OptionalGraphIndex};
 use genome_graph::bigraph::traitgraph::interface::GraphBase;
 use genome_graph::bigraph::traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+use log::{error, info, warn};
 use std::marker::PhantomData;
 
 /// The eulertigs algorithm.

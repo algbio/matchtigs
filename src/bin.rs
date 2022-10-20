@@ -13,6 +13,9 @@ use crate::implementation::{
     NodeWeightArrayType, PerformanceDataType, TigAlgorithm,
 };
 use clap::Parser;
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::index::GraphIndex;
 use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
@@ -25,24 +28,26 @@ use genome_graph::compact_genome::interface::alphabet::Alphabet;
 use genome_graph::compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use genome_graph::compact_genome::interface::sequence_store::{HandleWithLength, SequenceStore};
 use genome_graph::io::bcalm2::{
-    read_bigraph_from_bcalm2_as_edge_centric_from_file, PlainBCalm2NodeData,
+    read_bigraph_from_bcalm2_as_edge_centric, read_bigraph_from_bcalm2_as_edge_centric_from_file,
+    PlainBCalm2NodeData,
 };
-use genome_graph::io::fasta::{read_bigraph_from_fasta_as_edge_centric_from_file, FastaNodeData};
-use genome_graph::io::gfa::{read_gfa_as_edge_centric_bigraph_from_file, BidirectedGfaNodeData};
+use genome_graph::io::fasta::{
+    read_bigraph_from_fasta_as_edge_centric, read_bigraph_from_fasta_as_edge_centric_from_file,
+    FastaNodeData,
+};
+use genome_graph::io::gfa::{
+    read_gfa_as_edge_centric_bigraph, read_gfa_as_edge_centric_bigraph_from_file,
+    BidirectedGfaNodeData,
+};
 use genome_graph::io::SequenceData;
-use log::LevelFilter;
+use log::{debug, info, LevelFilter};
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::BufWriter;
 use std::io::Write;
+use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
-
-#[macro_use]
-extern crate log;
-//#[macro_use]
-//extern crate clap;
 
 mod implementation;
 
@@ -56,6 +61,7 @@ mod implementation;
 pub struct Cli {
     /// GFA file containing the input unitigs.
     /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
+    //     /// If the file ends in '.gz', then it is expected to be gzip-compressed.
     #[clap(long, conflicts_with_all = &["fa-in", "bcalm-in"], required_unless_present_any = &["fa-in", "bcalm-in"])]
     gfa_in: Option<PathBuf>,
 
@@ -63,6 +69,7 @@ pub struct Cli {
     /// If possible, pass GFA or bcalm2 fasta files, as those contain the topology of the graph,
     /// speeding up the parsing process.
     /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
+    /// If the file ends in '.gz', then it is expected to be gzip-compressed.
     #[clap(
         long,
         conflicts_with_all = &["gfa-in", "bcalm-in"],
@@ -75,6 +82,7 @@ pub struct Cli {
     /// Bcalm2 encodes the topology of the graph inside the fasta file, which makes using this
     /// option faster than `--fa-in` for bcalm2 fasta files.
     /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
+    /// If the file ends in '.gz', then it is expected to be gzip-compressed.
     #[clap(
     long,
     conflicts_with_all = &["fa-in", "gfa-in"],
@@ -84,46 +92,56 @@ pub struct Cli {
     bcalm_in: Option<PathBuf>,
 
     /// Compute pathtigs and write them to the given file in GFA format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     pathtigs_gfa_out: Option<PathBuf>,
 
     /// Compute pathtigs and write them to the given file in fasta format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     pathtigs_fa_out: Option<PathBuf>,
 
     /// Compute eulertigs and write them to the given file in GFA format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     eulertigs_gfa_out: Option<PathBuf>,
 
     /// Compute eulertigs and write them to the given file in fasta format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     eulertigs_fa_out: Option<PathBuf>,
 
     /// Compute greedy matchtigs and write them to the given file in GFA format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     greedytigs_gfa_out: Option<PathBuf>,
 
     /// Compute greedy matchtigs and write them to the given file in fasta format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     greedytigs_fa_out: Option<PathBuf>,
 
     /// Compute matchtigs and write them to the given file in GFA format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     matchtigs_gfa_out: Option<PathBuf>,
 
     /// Compute matchtigs and write them to the given file in fasta format.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     matchtigs_fa_out: Option<PathBuf>,
 
     /// Output a file with bitvectors in ASCII format, with a 0 for each duplicated instance of a kmer in the greedytigs.
     /// The bitvectors are separated by newline characters.
     /// Taking all kmers with a 1 results in a set of all original kmers with no duplicates.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     greedytigs_duplication_bitvector_out: Option<PathBuf>,
 
     /// Output a file with bitvectors in ASCII format, with a 0 for each duplicated instance of a kmer in the matchtigs.
     /// The bitvectors are separated by newline characters.
     /// Taking all kmers with a 1 results in a set of all original kmers with no duplicates.
+    /// If the file ends in '.gz', then it will be gzip-compressed.
     #[clap(long)]
     matchtigs_duplication_bitvector_out: Option<PathBuf>,
 
@@ -185,6 +203,25 @@ pub struct Cli {
 
     #[clap(long, default_value = "Info")]
     log_level: LevelFilter,
+
+    /// A value from 0-9 indicating the level of compression used when output.
+    /// 0 means no compression but fast output, while 0 means "take as long as you like".
+    /// This only has an effect for output files that end in ".gz".
+    #[clap(long, default_value = "6", value_parser = parse_compression_level)]
+    compression_level: Compression,
+}
+
+fn parse_compression_level(value: &str) -> Result<Compression, clap::error::Error> {
+    let compression_level = Compression::new(value.parse().unwrap_or_else(|err| {
+        panic!("Cannot parse compression level as unsigned integer: {err:?}")
+    }));
+    if compression_level.level() > 9 {
+        panic!(
+            "Specified compression level {}, but valid values are in 0 to 9 (inclusive)",
+            compression_level.level()
+        );
+    }
+    Ok(compression_level)
 }
 
 /// Edge data of a graph.
@@ -385,6 +422,53 @@ pub fn debug_assert_graph_edge_labels<
     }
 }
 
+/// Write a sequence of walks in fasta format to a file.
+/// If the file ends with ".gz", it will be compressed.
+pub fn write_walks_fasta_to_file<
+    'ws,
+    NodeData,
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
+    GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
+    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    WalkSource: IntoIterator<Item = &'ws Walk>,
+    OutPath: AsRef<Path>,
+    DebugOutPath: AsRef<Path>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    source_sequence_store: &GenomeSequenceStore,
+    k: usize,
+    path: OutPath,
+    debug_path: Option<DebugOutPath>,
+    compression_level: Compression,
+) {
+    let path = path.as_ref();
+    if path.extension().map(|s| s == "gz").unwrap_or(false) {
+        let encoder = GzEncoder::new(
+            BufWriter::new(File::create(path).unwrap()),
+            compression_level,
+        );
+        let debug_writer =
+            debug_path.map(|debug_path| BufWriter::new(File::create(debug_path).unwrap()));
+        write_walks_fasta(
+            graph,
+            walks,
+            source_sequence_store,
+            k,
+            encoder,
+            debug_writer,
+        )
+    } else {
+        let writer = BufWriter::new(File::create(path).unwrap());
+        let debug_writer =
+            debug_path.map(|debug_path| BufWriter::new(File::create(debug_path).unwrap()));
+        write_walks_fasta(graph, walks, source_sequence_store, k, writer, debug_writer)
+    }
+}
+
 /// Write a sequence of walks in fasta format.
 pub fn write_walks_fasta<
     'ws,
@@ -396,19 +480,16 @@ pub fn write_walks_fasta<
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
     SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
     WalkSource: IntoIterator<Item = &'ws Walk>,
-    P: AsRef<Path>,
+    Writer: Write,
+    DebugWriter: Write,
 >(
     graph: &Graph,
     walks: WalkSource,
     source_sequence_store: &GenomeSequenceStore,
     k: usize,
-    file_path: P,
-    debug_file_path: Option<&str>,
+    mut writer: Writer,
+    mut debug_writer: Option<DebugWriter>,
 ) {
-    let mut writer = BufWriter::new(File::create(file_path).unwrap());
-    let mut debug_writer = debug_file_path
-        .map(|debug_file_path| BufWriter::new(File::create(debug_file_path).unwrap()));
-
     for (i, walk) in walks.into_iter().enumerate() {
         let first_edge = *walk.first().unwrap();
         let first_data = graph.edge_data(first_edge);
@@ -531,6 +612,64 @@ pub fn write_walks_fasta<
     }
 }
 
+/// Write a sequence of walks in GFA format to a file.
+/// If the file ends with ".gz", it will be compressed.
+#[allow(clippy::too_many_arguments)]
+pub fn write_walks_gfa_to_file<
+    'ws,
+    NodeData,
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
+    GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
+    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    WalkSource: IntoIterator<Item = &'ws Walk>,
+    OutPath: AsRef<Path>,
+    DebugOutPath: AsRef<Path>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    source_sequence_store: &GenomeSequenceStore,
+    k: usize,
+    header: &Option<String>,
+    path: OutPath,
+    debug_path: Option<DebugOutPath>,
+    compression_level: Compression,
+) {
+    let path = path.as_ref();
+    if path.extension().map(|s| s == "gz").unwrap_or(false) {
+        let encoder = GzEncoder::new(
+            BufWriter::new(File::create(path).unwrap()),
+            compression_level,
+        );
+        let debug_writer =
+            debug_path.map(|debug_path| BufWriter::new(File::create(debug_path).unwrap()));
+        write_walks_gfa(
+            graph,
+            walks,
+            source_sequence_store,
+            k,
+            header,
+            encoder,
+            debug_writer,
+        )
+    } else {
+        let writer = BufWriter::new(File::create(path).unwrap());
+        let debug_writer =
+            debug_path.map(|debug_path| BufWriter::new(File::create(debug_path).unwrap()));
+        write_walks_gfa(
+            graph,
+            walks,
+            source_sequence_store,
+            k,
+            header,
+            writer,
+            debug_writer,
+        )
+    }
+}
+
 /// Write a set of walks in GFA format.
 pub fn write_walks_gfa<
     'ws,
@@ -542,22 +681,17 @@ pub fn write_walks_gfa<
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
     SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
     WalkSource: IntoIterator<Item = &'ws Walk>,
-    P: AsRef<Path>,
+    Writer: Write,
+    DebugWriter: Write,
 >(
     graph: &Graph,
     walks: WalkSource,
     source_sequence_store: &GenomeSequenceStore,
     k: usize,
     header: &Option<String>,
-    file_path: P,
-    debug_file_path: Option<&str>,
-)
-//where <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef: Index<RangeFrom<usize>,Output =<GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef >,
-{
-    let mut writer = BufWriter::new(File::create(file_path).unwrap());
-    let mut debug_writer = debug_file_path
-        .map(|debug_file_path| BufWriter::new(File::create(debug_file_path).unwrap()));
-
+    mut writer: Writer,
+    mut debug_writer: Option<DebugWriter>,
+) {
     let header = if let Some(header) = header {
         header.clone()
     } else {
@@ -722,6 +856,7 @@ fn log_mem(label: &str) {
 
 fn main() {
     let opts: Cli = Cli::parse();
+
     initialise_logging();
 
     debug!("Command line options:\n{opts:#?}");
@@ -734,8 +869,13 @@ fn main() {
     let (mut graph, k, gfa_header): (CliGraph<_>, _, _) = if let Some(gfa_in) = &opts.gfa_in {
         info!("Reading gfa as edge centric bigraph from {gfa_in:?}");
         let (graph, gfa_read_file_properties) =
-            read_gfa_as_edge_centric_bigraph_from_file(&gfa_in, &mut sequence_store, false)
-                .unwrap();
+            if gfa_in.extension().map(|s| s == "gz").unwrap_or(false) {
+                let decoder = BufReader::new(GzDecoder::new(File::open(gfa_in).unwrap()));
+                read_gfa_as_edge_centric_bigraph(decoder, &mut sequence_store, false).unwrap()
+            } else {
+                read_gfa_as_edge_centric_bigraph_from_file(&gfa_in, &mut sequence_store, false)
+                    .unwrap()
+            };
         let k = gfa_read_file_properties.k;
         if let Some(required_k) = opts.k {
             debug_assert_eq!(k, required_k);
@@ -746,16 +886,24 @@ fn main() {
     } else if let Some(fa_in) = &opts.fa_in {
         let k = opts.k.unwrap();
         info!("Reading fa as edge centric bigraph with k = {k} from {fa_in:?}");
-        let graph =
+        let graph = if fa_in.extension().map(|s| s == "gz").unwrap_or(false) {
+            let decoder = BufReader::new(GzDecoder::new(File::open(fa_in).unwrap()));
+            read_bigraph_from_fasta_as_edge_centric(decoder, &mut sequence_store, k).unwrap()
+        } else {
             read_bigraph_from_fasta_as_edge_centric_from_file(&fa_in, &mut sequence_store, k)
-                .unwrap();
+                .unwrap()
+        };
         (graph, k, None)
     } else if let Some(bcalm_in) = &opts.bcalm_in {
         let k = opts.k.unwrap();
         info!("Reading bcalm2 fa as edge centric bigraph with k = {k} from {bcalm_in:?}");
-        let graph =
+        let graph = if bcalm_in.extension().map(|s| s == "gz").unwrap_or(false) {
+            let decoder = BufReader::new(GzDecoder::new(File::open(bcalm_in).unwrap()));
+            read_bigraph_from_bcalm2_as_edge_centric(decoder, &mut sequence_store, k).unwrap()
+        } else {
             read_bigraph_from_bcalm2_as_edge_centric_from_file(&bcalm_in, &mut sequence_store, k)
-                .unwrap();
+                .unwrap()
+        };
         (graph, k, None)
     } else {
         unreachable!("Excluded by cli conditions");
@@ -812,19 +960,28 @@ fn main() {
         let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.pathtigs_fa_out {
             info!("Writing pathtigs as fasta to {fa_out:?}");
-            write_walks_fasta(&graph, &pathtigs, &sequence_store, k, fa_out, None);
+            write_walks_fasta_to_file(
+                &graph,
+                &pathtigs,
+                &sequence_store,
+                k,
+                fa_out,
+                Option::<PathBuf>::None,
+                opts.compression_level,
+            );
         }
 
         if let Some(gfa_out) = &opts.pathtigs_gfa_out {
             info!("Writing pathtigs as gfa to {gfa_out:?}");
-            write_walks_gfa(
+            write_walks_gfa_to_file(
                 &graph,
                 &pathtigs,
                 &sequence_store,
                 k,
                 &gfa_header,
                 gfa_out,
-                None,
+                Option::<PathBuf>::None,
+                opts.compression_level,
             );
         }
 
@@ -852,19 +1009,28 @@ fn main() {
         let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.eulertigs_fa_out {
             info!("Writing eulertigs as fasta to {fa_out:?}");
-            write_walks_fasta(&graph, &eulertigs, &sequence_store, k, fa_out, None);
+            write_walks_fasta_to_file(
+                &graph,
+                &eulertigs,
+                &sequence_store,
+                k,
+                fa_out,
+                Option::<PathBuf>::None,
+                opts.compression_level,
+            );
         }
 
         if let Some(gfa_out) = &opts.eulertigs_gfa_out {
             info!("Writing eulertigs as gfa to {gfa_out:?}");
-            write_walks_gfa(
+            write_walks_gfa_to_file(
                 &graph,
                 &eulertigs,
                 &sequence_store,
                 k,
                 &gfa_header,
                 gfa_out,
-                None,
+                Option::<PathBuf>::None,
+                opts.compression_level,
             );
         }
 
@@ -915,19 +1081,28 @@ fn main() {
         let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.greedytigs_fa_out {
             info!("Writing greedytigs as fasta to {fa_out:?}");
-            write_walks_fasta(&graph, &greedytigs, &sequence_store, k, fa_out, None);
+            write_walks_fasta_to_file(
+                &graph,
+                &greedytigs,
+                &sequence_store,
+                k,
+                fa_out,
+                Option::<PathBuf>::None,
+                opts.compression_level,
+            );
         }
 
         if let Some(gfa_out) = &opts.greedytigs_gfa_out {
             info!("Writing greedytigs as gfa to {gfa_out:?}");
-            write_walks_gfa(
+            write_walks_gfa_to_file(
                 &graph,
                 &greedytigs,
                 &sequence_store,
                 k,
                 &gfa_header,
                 gfa_out,
-                None,
+                Option::<PathBuf>::None,
+                opts.compression_level,
             );
         }
 
@@ -975,19 +1150,28 @@ fn main() {
         let write_start_time = Instant::now();
         if let Some(fa_out) = &opts.matchtigs_fa_out {
             info!("Writing matchtigs as fasta to {fa_out:?}");
-            write_walks_fasta(&graph, &matchtigs, &sequence_store, k, fa_out, None);
+            write_walks_fasta_to_file(
+                &graph,
+                &matchtigs,
+                &sequence_store,
+                k,
+                fa_out,
+                Option::<PathBuf>::None,
+                opts.compression_level,
+            );
         }
 
         if let Some(gfa_out) = &opts.matchtigs_gfa_out {
             info!("Writing matchtigs as gfa to {gfa_out:?}");
-            write_walks_gfa(
+            write_walks_gfa_to_file(
                 &graph,
                 &matchtigs,
                 &sequence_store,
                 k,
                 &gfa_header,
                 gfa_out,
-                None,
+                Option::<PathBuf>::None,
+                opts.compression_level,
             );
         }
 
