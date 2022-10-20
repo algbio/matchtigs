@@ -60,6 +60,6 @@ matchtigs --help
 
 Schmidt, S., Khan, S., Alanko, J., & Tomescu, A. I. (2021). Matchtigs: minimum plain text representation of kmer sets. _bioRxiv_. [https://doi.org/10.1101/2021.12.15.472871](https://doi.org/10.1101/2021.12.15.472871).
 
-**Eulertigs preprint (accepted at WABI 2022)**
+**Eulertigs (WABI 2022 best paper award)**
 
-Schmidt, S. and Alanko, J. (2022). Eulertigs: minimum plain text representation of k-mer sets without repetitions in linear time. _bioRxiv_. [https://doi.org/10.1101/2022.05.17.492399](https://doi.org/10.1101/2022.05.17.492399).
+Schmidt, S. and Alanko, J. (2022). Eulertigs: minimum plain text representation of k-mer sets without repetitions in linear time. WABI 2022. [10.4230/LIPIcs.WABI.2022.2](https://doi.org/10.4230/LIPIcs.WABI.2022.2).
