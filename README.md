@@ -8,7 +8,8 @@ The algorithms expect unitigs as an input, which can e.g. be computed with [BCAL
  * Compute [matchtigs and greedy matchtigs](https://doi.org/10.1101/2021.12.15.472871) with multiple threads
  * Compute Eulertigs
  * Compute pathtigs (heuristical Eulertigs similar to [ProphAsm](https://doi.org/10.1186/s13059-021-02297-z))
- * Both fasta and GFA format supported
+ * Both fasta and GFA format supported, as well as gzip compression if the files end in `.gz`
+ * The annotations in a fasta file output by bcalm2 can be used to speed up loading (use `--bcalm-in` instead of `--fasta-in`)
  * Output (ASCII-) bitvectors of duplicate kmers for applications that require unique kmers
 
 ## Installation via [conda/mamba](https://docs.conda.io/en/latest/)
@@ -22,7 +23,7 @@ mamba install -c conda-forge -c bioconda matchtigs
 
 ### Requirements
 
-Rust `>= 1.58.1`, best installed via [rustup](https://rustup.rs/).
+Rust `>= 1.60.0`, best installed via [rustup](https://rustup.rs/).
 
 ### Installation
 
