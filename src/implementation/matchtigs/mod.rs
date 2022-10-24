@@ -602,7 +602,6 @@ fn compute_matchtigs<
             matching_node_extra_offset[matching_node] = wcc_extra_node_offset[input_node];
         }
     }
-    println!("{:?}", matching_node_extra_offset);
     drop(wcc_extra_node_offset);
 
     // Output matching graph transformed to a perfect minimal matching problem
@@ -621,13 +620,15 @@ fn compute_matchtigs<
     )
     .unwrap();
 
-    // Write the first copy of the matching graph with edges to the second copy
-    let mut last_n1 = None;
-    for (n1, n2, weight) in edges
+    let sorted_edges: Vec<_> = edges
         .iter()
         .map(|(&(n1, n2), &(weight, ..))| (n1, n2, weight))
         .sorted()
-    {
+        .collect();
+
+    // Write the first copy of the matching graph with edges to the second copy
+    let mut last_n1 = None;
+    for (n1, n2, weight) in sorted_edges.iter().copied() {
         debug_assert_ne!(weight, 0);
         if let Some(last_n1) = last_n1.as_mut() {
             // Write edges between the two copies of the matching graph
@@ -654,7 +655,7 @@ fn compute_matchtigs<
         last_n1 = Some(n1);
     }
 
-    // Write the remaining edges between the two copies of the matching graph
+    // Write the remaining edges between the two copies of the matching graph and extra edges
     let mut last_n1 = last_n1.unwrap_or(0);
     while last_n1 < transformed_node_count {
         writeln!(
@@ -676,7 +677,7 @@ fn compute_matchtigs<
 
     // Write second copy of matching graph
     let mut last_n1 = None;
-    for (&(n1, n2), &(weight, ..)) in &edges {
+    for (n1, n2, weight) in sorted_edges.iter().copied() {
         if let Some(last_n1) = last_n1.as_mut() {
             // Write edges between the two copies of the matching graph
             while *last_n1 < n1 {
@@ -694,6 +695,7 @@ fn compute_matchtigs<
                 *last_n1 += 1;
             }
         }
+        last_n1 = Some(n1);
 
         if n1 == n2 {
             continue;
@@ -707,7 +709,6 @@ fn compute_matchtigs<
             weight
         )
         .unwrap();
-        last_n1 = Some(n1);
     }
 
     // Write the remaining extra edges of second copy of the matching graph
