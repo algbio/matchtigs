@@ -10,6 +10,7 @@ use genome_graph::bigraph::algo::eulerian::{
     compute_minimum_bidirected_eulerian_cycle_decomposition, decomposes_into_eulerian_bicycles,
     find_non_eulerian_binodes_with_differences,
 };
+use genome_graph::bigraph::algo::weakly_connected_components::decompose_weakly_connected_components;
 use genome_graph::bigraph::interface::dynamic_bigraph::DynamicEdgeCentricBigraph;
 use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::index::{GraphIndex, OptionalGraphIndex};
@@ -131,7 +132,7 @@ fn compute_matchtigs_choose_node_weight_array_type<
     }
 }
 
-/// Computes matchtigs in the given graph.
+/// Computes matchtigs in the given weakly connected graph.
 /// The `matcher_path` should point to a [blossom5](https://pub.ist.ac.at/~vnk/software.html) binary.
 /// The `matching_file_prefix` is the name-prefix of the file used to store the matching instance and its result.
 fn compute_matchtigs<
@@ -556,6 +557,34 @@ fn compute_matchtigs<
         matching_mirror_expanded_biedge_count, matching_mirror_biedge_count
     );
 
+    // Need to insert four extra nodes per WCC to ensure that there is always a breaking edge
+    info!("Computing WCCs of graph");
+    let wccs = decompose_weakly_connected_components(graph);
+    let wcc_map: HashMap<_, _> = wccs
+        .iter()
+        .copied()
+        .unique()
+        .enumerate()
+        .map(|(k, v)| (v, k))
+        .collect();
+    let wcc_extra_node_offset: Vec<_> = wccs.into_iter().map(|n| wcc_map[&n] * 4).collect();
+    let wcc_amount = wcc_map.len();
+    drop(wcc_map);
+    info!("Fount {wcc_amount} WCCs");
+
+    // Translate matching instance nodes into input graph nodes
+    info!("Assigning extra nodes to nodes in the matching instance");
+    let mut matching_node_extra_offset = Vec::new();
+    for (input_node, matching_nodes) in node_id_map.node_id_map.iter().enumerate() {
+        for matching_node in matching_nodes.iter().copied() {
+            if matching_node_extra_offset.len() <= matching_node {
+                matching_node_extra_offset.resize(matching_node + 1, usize::MAX);
+            }
+            matching_node_extra_offset[matching_node] = wcc_extra_node_offset[input_node];
+        }
+    }
+    drop(wcc_extra_node_offset);
+
     // Output matching graph transformed to a perfect minimal matching problem
     let matching_input_path =
         append_to_filename(matching_file_prefix.to_owned(), ".minimalperfectmatching");
@@ -564,8 +593,10 @@ fn compute_matchtigs<
     writeln!(
         output_writer,
         "{} {}",
-        transformed_node_count * 2,
-        edges.len() * 2 + transformed_node_count,
+        // two copies of each node plus two copies of the two extra nodes
+        transformed_node_count * 2 + 4 * wcc_amount,
+        // two copies of each edge plus the edges connecting the nodes, plus edges from each node to its corresponding extra nodes
+        edges.len() * 2 + transformed_node_count + 4 * transformed_node_count,
     )
     .unwrap();
 
@@ -582,10 +613,16 @@ fn compute_matchtigs<
             while *last_n1 < n1 {
                 writeln!(
                     output_writer,
-                    "{} {} {}",
+                    "{} {} {}\n{} {} {}\n{} {} {}",
                     *last_n1,
                     *last_n1 + transformed_node_count,
                     k - 1,
+                    *last_n1,
+                    2 * transformed_node_count + matching_node_extra_offset[*last_n1],
+                    0,
+                    *last_n1,
+                    2 * transformed_node_count + matching_node_extra_offset[*last_n1] + 1,
+                    0,
                 )
                 .unwrap();
                 *last_n1 += 1;
@@ -601,17 +638,42 @@ fn compute_matchtigs<
     while last_n1 < transformed_node_count {
         writeln!(
             output_writer,
-            "{} {} {}",
+            "{} {} {}\n{} {} {}\n{} {} {}",
             last_n1,
             last_n1 + transformed_node_count,
             k - 1,
+            last_n1,
+            2 * transformed_node_count + matching_node_extra_offset[last_n1],
+            0,
+            last_n1,
+            2 * transformed_node_count + matching_node_extra_offset[last_n1] + 1,
+            0,
         )
         .unwrap();
         last_n1 += 1;
     }
 
     // Write second copy of matching graph
+    let mut last_n1 = None;
     for (&(n1, n2), &(weight, ..)) in &edges {
+        if let Some(last_n1) = last_n1.as_mut() {
+            // Write edges between the two copies of the matching graph
+            while *last_n1 < n1 {
+                writeln!(
+                    output_writer,
+                    "{} {} {}\n{} {} {}",
+                    *last_n1 + transformed_node_count,
+                    2 * transformed_node_count + matching_node_extra_offset[*last_n1] + 2,
+                    0,
+                    *last_n1 + transformed_node_count,
+                    2 * transformed_node_count + matching_node_extra_offset[*last_n1] + 3,
+                    0,
+                )
+                .unwrap();
+                *last_n1 += 1;
+            }
+        }
+
         if n1 == n2 {
             continue;
         }
@@ -625,6 +687,24 @@ fn compute_matchtigs<
         )
         .unwrap();
     }
+
+    // Write the remaining extra edges of second copy of the matching graph
+    let mut last_n1 = last_n1.unwrap_or(transformed_node_count);
+    while last_n1 < 2 * transformed_node_count {
+        writeln!(
+            output_writer,
+            "{} {} {}\n{} {} {}",
+            last_n1 + transformed_node_count,
+            2 * transformed_node_count + matching_node_extra_offset[last_n1] + 2,
+            0,
+            last_n1 + transformed_node_count,
+            2 * transformed_node_count + matching_node_extra_offset[last_n1] + 3,
+            0,
+        )
+        .unwrap();
+        last_n1 += 1;
+    }
+
     drop(output_writer);
 
     // Matching if necessary
@@ -674,8 +754,12 @@ fn compute_matchtigs<
         let n1 = columns.next().unwrap().parse().unwrap();
         let n2 = columns.next().unwrap().parse().unwrap();
 
-        if n1 >= transformed_node_count && n2 >= transformed_node_count {
+        if (n1 >= transformed_node_count && n2 >= transformed_node_count)
+            || n1 >= 2 * transformed_node_count
+            || n2 >= 2 * transformed_node_count
+        {
             // If both nodes are from the second copy of the graph, do not add the duplicate edge.
+            // Also, if this is an edge to an extra node, no edge is added to the input graph.
             continue;
         }
 
@@ -771,16 +855,21 @@ fn compute_matchtigs<
         // Rotate cycle such that longest dummy is first edge
         let mut longest_dummy_weight = 0;
         let mut longest_dummy_index = 0;
+        let mut has_breaking_edge = false;
         for (index, &edge) in eulerian_cycle.iter().enumerate() {
             let edge_data = graph.edge_data(edge);
             if edge_data.is_dummy() && edge_data.weight() > longest_dummy_weight {
                 longest_dummy_weight = edge_data.weight();
                 longest_dummy_index = index;
+                if edge_data.weight() >= k {
+                    has_breaking_edge = true;
+                }
             }
         }
         if longest_dummy_weight > 0 {
             eulerian_cycle.rotate_left(longest_dummy_index);
         }
+        assert!(has_breaking_edge);
 
         let mut offset = 0;
         let mut last_edge_is_dummy = false;
