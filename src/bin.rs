@@ -70,10 +70,7 @@ pub struct Cli {
     /// speeding up the parsing process.
     /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
     /// If the file ends in '.gz', then it is expected to be gzip-compressed.
-    #[clap(
-        long,
-        requires = "k"
-    )]
+    #[clap(long, requires = "k")]
     fa_in: Option<PathBuf>,
 
     /// Bcalm2 Fasta file containing the input unitigs.
@@ -81,10 +78,7 @@ pub struct Cli {
     /// option faster than `--fa-in` for bcalm2 fasta files.
     /// Either a GFA input file a fasta input file, or a bcalm input file must be given.
     /// If the file ends in '.gz', then it is expected to be gzip-compressed.
-    #[clap(
-        long,
-        requires = "k"
-    )]
+    #[clap(long, requires = "k")]
     bcalm_in: Option<PathBuf>,
 
     /// Compute pathtigs and write them to the given file in GFA format.
@@ -852,9 +846,13 @@ fn log_mem(label: &str) {
 
 fn main() {
     let opts: Cli = Cli::parse();
-    let input_argument_count = opts.fa_in.clone().map(|_| 1).unwrap_or(0) + opts.gfa_in.clone().map(|_| 1).unwrap_or(0) + opts.bcalm_in.clone().map(|_| 1).unwrap_or(0);
+    let input_argument_count = opts.fa_in.clone().map(|_| 1).unwrap_or(0)
+        + opts.gfa_in.clone().map(|_| 1).unwrap_or(0)
+        + opts.bcalm_in.clone().map(|_| 1).unwrap_or(0);
     if input_argument_count == 0 {
-        panic!("Missing input argument. Specify exactly least one of --fa-in, --gfa-in or --bcalm-in");
+        panic!(
+            "Missing input argument. Specify exactly least one of --fa-in, --gfa-in or --bcalm-in"
+        );
     }
     if input_argument_count > 1 {
         panic!("Too many input arguments. Specify exactly least one of --fa-in, --gfa-in or --bcalm-in");
