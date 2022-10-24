@@ -686,11 +686,12 @@ fn compute_matchtigs<
             weight
         )
         .unwrap();
+        last_n1 = Some(n1);
     }
 
     // Write the remaining extra edges of second copy of the matching graph
-    let mut last_n1 = last_n1.unwrap_or(transformed_node_count);
-    while last_n1 < 2 * transformed_node_count {
+    let mut last_n1 = last_n1.unwrap_or(0);
+    while last_n1 < transformed_node_count {
         writeln!(
             output_writer,
             "{} {} {}\n{} {} {}",
