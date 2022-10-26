@@ -45,14 +45,31 @@ pub struct GreedytigAlgorithmConfiguration {
     /// If given, enables staged parallelism mode.
     /// In this mode, shortest path queries are limited in the amount of memory they can use, and larger queries are postponed to be executed with less queries in parallel.
     pub staged_parallelism_divisor: Option<f64>,
-    /// If staged paralallelism mode is on, then the resource limits are calculated based on the existing nodes in the graph times this factor, divided by the number of threads.
+    /// If staged parallelism mode is on, then the resource limits are calculated based on the existing nodes in the graph times this factor, divided by the number of threads.
     pub resource_limit_factor: usize,
     /// The type of the node weight array used by Dijkstra's algorithm.
     pub node_weight_array_type: NodeWeightArrayType,
     /// The type of the heap used by Dijkstra's algorithm.
     pub heap_type: HeapType,
-    /// The type of the performance data collector used by Dikstra's algorithm.
+    /// The type of the performance data collector used by Dijkstra's algorithm.
     pub performance_data_type: PerformanceDataType,
+}
+
+impl GreedytigAlgorithmConfiguration {
+    /// Construct the configuration for the greedytig algorithm, using default values wherever possible.
+    // part of public interface
+    #[allow(dead_code)]
+    pub fn new(threads: usize, k: usize) -> Self {
+        Self {
+            threads,
+            k,
+            staged_parallelism_divisor: None,
+            resource_limit_factor: 0,
+            node_weight_array_type: NodeWeightArrayType::HashbrownHashMap,
+            heap_type: HeapType::StdBinaryHeap,
+            performance_data_type: PerformanceDataType::None,
+        }
+    }
 }
 
 impl<Graph: GraphBase, SequenceHandle: Default + Clone> TigAlgorithm<Graph>
