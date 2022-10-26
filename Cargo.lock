@@ -631,7 +631,7 @@ dependencies = [
 
 [[package]]
 name = "matchtigs"
-version = "1.3.2"
+version = "1.4.0"
 dependencies = [
  "atomic-counter",
  "clap",
