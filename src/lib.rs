@@ -14,5 +14,5 @@ pub use implementation::{
     greedytigs::GreedytigAlgorithm, greedytigs::GreedytigAlgorithmConfiguration,
     matchtigs::MatchtigAlgorithm, matchtigs::MatchtigAlgorithmConfiguration,
     pathtigs::PathtigAlgorithm, write_duplication_bitvector, write_duplication_bitvector_to_file,
-    HeapType, NodeWeightArrayType, TigAlgorithm,
+    HeapType, MatchtigEdgeData, NodeWeightArrayType, TigAlgorithm,
 };
