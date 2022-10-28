@@ -288,21 +288,34 @@ pub fn choose_in_node_from_iterator<
     in_node
 }
 
+/// The edge data of the graph to compute matchtigs on has to implement this.
 pub trait MatchtigEdgeData<SequenceHandle>:
     DijkstraWeightedEdgeData<usize> + BidirectedData
 {
+    /// Returns true if the edge is a dummy edge.
+    /// This is the case if the `dummy_id` given in [Self::new] is non-zero.
     fn is_dummy(&self) -> bool;
 
+    /// Return true if the edge is an original edge.
     fn is_original(&self) -> bool {
         !self.is_dummy()
     }
 
+    /// Returns true if this is the forwards variant of this edge,
+    /// i.e. if the `sequence_handle` given in [Self::new] is the sequence belonging to this edge.
+    /// This is the case if the `forwards` given in [Self::new] is `true`.
     fn is_forwards(&self) -> bool;
 
+    /// Returns true if this is the backwards variant of this edge,
+    /// i.e. if the `sequence_handle` given in [Self::new] is the reverse complement of the sequence belonging to this edge.
+    /// This is the case if the `forwards` given in [Self::new] is `false`.
     fn is_backwards(&self) -> bool {
         !self.is_forwards()
     }
 
+    /// Creates a new edge with the given properties.
+    /// The given values must be returned by the respective functions of this trait,
+    /// and the `weight` by the implementation of [DijkstraWeightedEdgeData](traitgraph_algo::dijkstra::DijkstraWeightedEdgeData) of this type.
     fn new(sequence_handle: SequenceHandle, forwards: bool, weight: usize, dummy_id: usize)
         -> Self;
 }
