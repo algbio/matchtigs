@@ -1,6 +1,6 @@
 [package]
 name = "matchtigs"
-version = "1.4.2"
+version = "1.4.3"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 description = "Different algorithms for computing small and minimum plain text representations of kmer sets."
 keywords = ["compression", "plain-text", "kmer", "genome", "bio"]
@@ -15,7 +15,7 @@ license-file = "LICENSE.txt"
 
 [lib]
 name = "libmatchtigs"
-crate-type = ["dylib"]
+crate-type = ["rlib", "dylib"]
 path = "src/lib.rs"
 
 [[bin]]
