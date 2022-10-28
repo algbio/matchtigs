@@ -484,9 +484,9 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "5.0.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "927bf3c9401db87a655d6cfef89f6eba053fb9bf1e912d25a5c84f7261f6d04c"
+checksum = "d768428a2a8e8ee32ff36b2c0872adab5822a05e57119e33cace7f695d2cea32"
 dependencies = [
  "anyhow",
  "bigraph",
@@ -610,9 +610,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.136"
+version = "0.2.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55edcf6c0bb319052dea84732cf99db461780fd5e8d3eb46ab6ff312ab31f197"
+checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
 
 [[package]]
 name = "libm"
@@ -631,7 +631,7 @@ dependencies = [
 
 [[package]]
 name = "matchtigs"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "atomic-counter",
  "clap",
