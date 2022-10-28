@@ -28,7 +28,7 @@ jobs:
             command:
               name: Lint
               command: clippy
-              args: --all-features --tests --benches -- -D clippy::all
+              args: --all-features --tests --benches -- -D clippy::all -D warnings
           - toolchain: stable
             command:
               name: Doc
