@@ -838,9 +838,9 @@ fn debug_print_walks<
 
 fn log_mem(label: &str) {
     if let Some(usage) = memory_stats::memory_stats() {
-        println!("{label} memory usage: {}", usage.physical_mem);
+        debug!("{label} memory usage: {}", usage.physical_mem);
     } else {
-        println!("Couldn't get {label} memory usage :(");
+        debug!("Couldn't get {label} memory usage :(");
     }
 }
 
