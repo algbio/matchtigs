@@ -560,51 +560,50 @@ fn compute_matchtigs<
     // Need to insert four extra nodes per WCC to ensure that there is always a breaking edge
     info!("Computing WCCs of graph");
     let wccs = decompose_weakly_connected_components(graph);
-    /*let mut matching_node_extra_offset = Vec::new();
-    node_id_map.node_id_map.iter().enumerate().flat_map(|(input_node, matching_nodes)| matching_nodes.iter().copied().map(move |matching_node| (matching_node, input_node))).for_each(|(matching_node, input_node)| {
-        if matching_node_extra_offset.len() <= matching_node {
-            matching_node_extra_offset.resize(matching_node + 1, usize::MAX);
-        }
-        matching_node_extra_offset[matching_node] = wccs[input_node].as_usize();
-    });*/
 
+    info!("Filtering irrelevant WCCs");
+    // maps from WCC identifier to a consecutive zero-based WCC index, for all WCCs that occur in the matching instance
     let wcc_map: HashMap<_, _> = wccs
         .iter()
         .enumerate()
-        .filter_map(|(input_node, wcc)| {
+        .filter_map(|(input_node, wcc_identifier)| {
             if node_id_map.node_id_map[input_node].is_empty() {
                 None
             } else {
-                Some(wcc)
+                Some(wcc_identifier)
             }
         })
         .copied()
         .unique()
         .enumerate()
-        .map(|(k, v)| (v, k))
-        .collect();
-    let wcc_extra_node_offset: Vec<_> = wccs
-        .into_iter()
-        .filter_map(|n| wcc_map.get(&n).map(|x| x * 4))
+        .map(|(wcc_index, wcc_identifier)| (wcc_identifier, wcc_index))
         .collect();
     let wcc_amount = wcc_map.len();
-    drop(wcc_map);
-    info!("Fount {wcc_amount} WCCs");
+    info!("Found {wcc_amount} relevant WCCs");
 
     // Translate matching instance nodes into input graph nodes
     info!("Assigning extra nodes to nodes in the matching instance");
     let mut matching_node_extra_offset = Vec::new();
-    for (input_node, matching_nodes) in node_id_map.node_id_map.iter().enumerate() {
+    for (input_node, matching_nodes) in node_id_map
+        .node_id_map
+        .iter()
+        .enumerate()
+        .filter(|(_, matching_nodes)| !matching_nodes.is_empty())
+    {
+        let input_node_wcc_extra_offset =
+            2 * transformed_node_count + 4 * wcc_map.get(&wccs[input_node]).unwrap();
+
         for matching_node in matching_nodes.iter().copied() {
             if matching_node_extra_offset.len() <= matching_node {
                 matching_node_extra_offset.resize(matching_node + 1, usize::MAX);
             }
-            matching_node_extra_offset[matching_node] = wcc_extra_node_offset[input_node];
+            matching_node_extra_offset[matching_node] = input_node_wcc_extra_offset;
         }
     }
-    drop(wcc_extra_node_offset);
+    drop(wcc_map);
+    drop(wccs);
 
-    // Output matching graph transformed to a perfect minimal matching problem
+    // Output matching graph transformed to a minimum perfect matching problem
     let matching_input_path =
         append_to_filename(matching_file_prefix.to_owned(), ".minimalperfectmatching");
     info!("Outputting matching problem to {:?}", matching_input_path);
@@ -640,10 +639,10 @@ fn compute_matchtigs<
                     *last_n1 + transformed_node_count,
                     k - 1,
                     *last_n1,
-                    2 * transformed_node_count + matching_node_extra_offset[*last_n1],
+                    matching_node_extra_offset[*last_n1],
                     0,
                     *last_n1,
-                    2 * transformed_node_count + matching_node_extra_offset[*last_n1] + 1,
+                    matching_node_extra_offset[*last_n1] + 1,
                     0,
                 )
                 .unwrap();
@@ -665,10 +664,10 @@ fn compute_matchtigs<
             last_n1 + transformed_node_count,
             k - 1,
             last_n1,
-            2 * transformed_node_count + matching_node_extra_offset[last_n1],
+            matching_node_extra_offset[last_n1],
             0,
             last_n1,
-            2 * transformed_node_count + matching_node_extra_offset[last_n1] + 1,
+            matching_node_extra_offset[last_n1] + 1,
             0,
         )
         .unwrap();
@@ -685,10 +684,10 @@ fn compute_matchtigs<
                     output_writer,
                     "{} {} {}\n{} {} {}",
                     *last_n1 + transformed_node_count,
-                    2 * transformed_node_count + matching_node_extra_offset[*last_n1] + 2,
+                    matching_node_extra_offset[*last_n1] + 2,
                     0,
                     *last_n1 + transformed_node_count,
-                    2 * transformed_node_count + matching_node_extra_offset[*last_n1] + 3,
+                    matching_node_extra_offset[*last_n1] + 3,
                     0,
                 )
                 .unwrap();
@@ -718,10 +717,10 @@ fn compute_matchtigs<
             output_writer,
             "{} {} {}\n{} {} {}",
             last_n1 + transformed_node_count,
-            2 * transformed_node_count + matching_node_extra_offset[last_n1] + 2,
+            matching_node_extra_offset[last_n1] + 2,
             0,
             last_n1 + transformed_node_count,
-            2 * transformed_node_count + matching_node_extra_offset[last_n1] + 3,
+            matching_node_extra_offset[last_n1] + 3,
             0,
         )
         .unwrap();

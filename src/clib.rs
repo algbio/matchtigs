@@ -23,6 +23,7 @@ use genome_graph::bigraph::traitgraph::interface::{
     GraphBase, ImmutableGraphContainer, MutableGraphContainer,
 };
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
+use log::LevelFilter;
 use std::ffi::{CStr, CString, OsString};
 use std::os::raw::c_char;
 use std::os::unix::ffi::OsStringExt;
@@ -102,7 +103,7 @@ impl DijkstraWeightedEdgeData<usize> for ExternalEdgeData {
 /// Call this exactly once before interacting with this library.
 #[no_mangle]
 pub extern "C" fn matchtigs_initialise() {
-    initialise_logging();
+    initialise_logging(LevelFilter::Info);
     get_graph();
 }
 

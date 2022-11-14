@@ -858,7 +858,7 @@ fn main() {
         panic!("Too many input arguments. Specify exactly least one of --fa-in, --gfa-in or --bcalm-in");
     }
 
-    initialise_logging();
+    initialise_logging(opts.log_level);
 
     debug!("Command line options:\n{opts:#?}");
 

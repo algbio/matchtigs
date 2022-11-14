@@ -34,13 +34,9 @@ pub mod pathtigs;
 
 const TARGET_DIJKSTRA_BLOCK_TIME: f32 = 5.0; // seconds
 
-pub fn initialise_logging() {
+pub fn initialise_logging(log_level: LevelFilter) {
     CombinedLogger::init(vec![TermLogger::new(
-        if cfg!(debug_assertions) {
-            LevelFilter::Trace
-        } else {
-            LevelFilter::Info
-        },
+        log_level,
         Config::default(),
         TerminalMode::Mixed,
         ColorChoice::Auto,
