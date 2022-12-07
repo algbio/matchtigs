@@ -12,7 +12,7 @@ use crate::implementation::{
     initialise_logging, write_duplication_bitvector_to_file, HeapType, MatchtigEdgeData,
     NodeWeightArrayType, PerformanceDataType, TigAlgorithm,
 };
-use clap::{Parser, crate_version};
+use clap::{crate_version, Parser};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
