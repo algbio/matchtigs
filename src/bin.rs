@@ -12,7 +12,7 @@ use crate::implementation::{
     initialise_logging, write_duplication_bitvector_to_file, HeapType, MatchtigEdgeData,
     NodeWeightArrayType, PerformanceDataType, TigAlgorithm,
 };
-use clap::Parser;
+use clap::{Parser, crate_version};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -54,7 +54,7 @@ mod implementation;
 /// The command line parser.
 #[derive(Parser, Debug)]
 #[clap(
-    version = env!("CARGO_PKG_VERSION"),
+    version = crate_version!(),
     author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>",
     about = "Matchtigs: minimum plain text representation of kmer sets.",
 )]
