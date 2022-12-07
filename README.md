@@ -12,20 +12,27 @@ The algorithms expect unitigs as an input, which can e.g. be computed with [BCAL
  * The annotations in a fasta file output by bcalm2 can be used to speed up loading (use `--bcalm-in` instead of `--fasta-in`)
  * Output (ASCII-) bitvectors of duplicate kmers for applications that require unique kmers
 
-## Installation via [conda/mamba](https://docs.conda.io/en/latest/)
+## Installation
+
+The matchtigs tool can be installed with the following methods.
+Out of the box, it implements all algorithms but the optimal matchtig algorithm.
+This is because the optimal matchtig algorithm uses the commercial software blossom V, which is free to use for researchers, but cannot be publicly redistributed.
+For all practical purposes, we recommend using greedy matchtigs, as they are a lot more efficient to compute, and have very similar cumulative length and string count as matchtigs (see the matchtigs publication linked below).
+
+### Installation via [conda/mamba](https://docs.conda.io/en/latest/)
 
 Install `matchtigs` with
 ```bash
 mamba install -c conda-forge -c bioconda matchtigs
 ```
 
-## Installation via [cargo](https://crates.io/)
+### Installation via [cargo](https://crates.io/)
 
-### Requirements
+#### Requirements
 
 Rust `>= 1.60.0`, best installed via [rustup](https://rustup.rs/).
 
-### Installation
+#### Installation
 
 Install `matchtigs` with
 ```bash
