@@ -1,7 +1,9 @@
 # Matchtigs & Eulertigs: minimum plain text representation of kmer sets - with and without repetitions
 
 This is an implementation of different algorithms for computing small and minimum plain text representations of kmer sets.
-The algorithms expect unitigs as an input, which can e.g. be computed with [BCALM2](https://github.com/GATB/bcalm).
+The algorithms expect unitigs as an input, which can e.g. be computed with [GGCAT](https://github.com/algbio/ggcat) or [BCALM2](https://github.com/GATB/bcalm).
+
+If you wish to compute matchtigs or Eulertigs from arbitrary input without computing unitigs yourself first, consider using [GGCAT](https://github.com/algbio/ggcat). Its readme mentions the required flags.
 
 ## Features
 
@@ -9,7 +11,7 @@ The algorithms expect unitigs as an input, which can e.g. be computed with [BCAL
  * Compute Eulertigs
  * Compute pathtigs (heuristical Eulertigs similar to [ProphAsm](https://doi.org/10.1186/s13059-021-02297-z))
  * Both fasta and GFA format supported, as well as gzip compression if the files end in `.gz`
- * The annotations in a fasta file output by bcalm2 can be used to speed up loading (use `--bcalm-in` instead of `--fasta-in`)
+ * The annotations in a fasta file output by GGCAT (use `-e` flag) or BCALM2 (no flag required) can be used to speed up loading (use `--bcalm-in` instead of `--fasta-in`)
  * Output (ASCII-) bitvectors of duplicate kmers for applications that require unique kmers
 
 ## Installation
