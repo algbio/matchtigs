@@ -53,7 +53,7 @@ Computing Eulertigs from a GFA file and saving them as both GFA (without topolog
 matchtigs --fa-in unitigs.fa --eulertigs-gfa-out eulertigs.gfa --eulertigs-fa-out eulertigs.fa
 ```
 
-**Note:** when computing unitigs with bcalm2, it is much faster to use `--bcalm-in`:
+**Note:** when computing unitigs with GGCAT or BCALM2, it is much faster to use `--bcalm-in`:
 ```bash
 matchtigs --bcalm-in unitigs.fa --eulertigs-gfa-out eulertigs.gfa --eulertigs-fa-out eulertigs.fa
 ```
