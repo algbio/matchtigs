@@ -274,7 +274,6 @@ fn compute_greedytigs<
 
         #[allow(clippy::too_many_arguments)]
         fn compute_dijkstras<
-            'missed_nodes,
             EdgeData: DijkstraWeightedEdgeData<usize>,
             Graph: StaticBigraph<EdgeData = EdgeData>,
             DijkstraNodeWeightArray: NodeWeightArray<usize>,
@@ -286,7 +285,7 @@ fn compute_greedytigs<
             distances: &mut Vec<(Graph::NodeIndex, usize)>,
             shortest_paths: &mut Vec<(Graph::NodeIndex, Graph::NodeIndex, usize)>,
             out_nodes: &[Graph::NodeIndex],
-            missed_nodes: RelaxedAtomicBoolSlice<'missed_nodes>,
+            missed_nodes: RelaxedAtomicBoolSlice,
             dijkstra_performance_limit: usize,
             in_node_map: &RelaxedAtomicBoolVec,
             locked_node_multiplicities: &[Mutex<isize>],
@@ -313,9 +312,7 @@ fn compute_greedytigs<
 
                 debug_assert!(
                     (0..=4).contains(&out_node_multiplicity),
-                    "out_node_multiplicity = {}, out_node_is_self_mirror = {}",
-                    out_node_multiplicity,
-                    out_node_is_self_mirror
+                    "out_node_multiplicity = {out_node_multiplicity}, out_node_is_self_mirror = {out_node_is_self_mirror}"
                 );
 
                 if out_node_multiplicity == 0 {
@@ -545,7 +542,7 @@ fn compute_greedytigs<
                     / configuration
                         .staged_parallelism_divisor
                         .expect("Iteration > 0 will never be reached if this is None")
-                        .powi(iteration as i32)) as usize)
+                        .powi(iteration)) as usize)
                     .max(1)
             };
             let resource_limit =

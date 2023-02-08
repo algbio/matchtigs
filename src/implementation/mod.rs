@@ -432,35 +432,20 @@ pub fn make_graph_eulerian_with_breaking_edges<
         self_mirror_node_differences.len(),
     );
 
-    let total_out_node_difference: isize = out_node_differences.iter().map(|(_, d)| *d).sum();
-    let total_in_node_difference: isize = in_node_differences.iter().map(|(_, d)| *d).sum();
-    let out_node_difference_one_count = out_node_differences
-        .iter()
-        .filter(|(_, d)| **d == -1)
-        .count();
-    let in_node_difference_one_count = in_node_differences.iter().filter(|(_, d)| **d == 1).count();
-    let out_node_difference_two_count = out_node_differences
-        .iter()
-        .filter(|(_, d)| **d == -2)
-        .count();
-    let in_node_difference_two_count = in_node_differences.iter().filter(|(_, d)| **d == 2).count();
-    let out_node_difference_three_count = out_node_differences
-        .iter()
-        .filter(|(_, d)| **d == -3)
-        .count();
-    let in_node_difference_three_count =
-        in_node_differences.iter().filter(|(_, d)| **d == 3).count();
-    let out_node_difference_four_count = out_node_differences
-        .iter()
-        .filter(|(_, d)| **d == -4)
-        .count();
-    let in_node_difference_four_count =
-        in_node_differences.iter().filter(|(_, d)| **d == 4).count();
-    let out_node_difference_more_count = out_node_differences
-        .iter()
-        .filter(|(_, d)| **d < -4)
-        .count();
-    let in_node_difference_more_count = in_node_differences.iter().filter(|(_, d)| **d > 4).count();
+    let total_out_node_difference: isize = out_node_differences.values().copied().sum();
+    let total_in_node_difference: isize = in_node_differences.values().copied().sum();
+    let out_node_difference_one_count = out_node_differences.values().filter(|d| **d == -1).count();
+    let in_node_difference_one_count = in_node_differences.values().filter(|d| **d == 1).count();
+    let out_node_difference_two_count = out_node_differences.values().filter(|d| **d == -2).count();
+    let in_node_difference_two_count = in_node_differences.values().filter(|d| **d == 2).count();
+    let out_node_difference_three_count =
+        out_node_differences.values().filter(|d| **d == -3).count();
+    let in_node_difference_three_count = in_node_differences.values().filter(|d| **d == 3).count();
+    let out_node_difference_four_count =
+        out_node_differences.values().filter(|d| **d == -4).count();
+    let in_node_difference_four_count = in_node_differences.values().filter(|d| **d == 4).count();
+    let out_node_difference_more_count = out_node_differences.values().filter(|d| **d < -4).count();
+    let in_node_difference_more_count = in_node_differences.values().filter(|d| **d > 4).count();
     debug_assert_eq!(-total_out_node_difference, total_in_node_difference);
     debug_assert_eq!(
         (total_in_node_difference + self_mirror_node_differences.len() as isize) % 2,
@@ -555,15 +540,13 @@ pub fn make_graph_eulerian_with_breaking_edges<
         ) {
             in_node
         } else {
-            let current_out_node_difference: isize =
-                out_node_differences.iter().map(|(_, d)| *d).sum();
-            let current_in_node_difference: isize =
-                in_node_differences.iter().map(|(_, d)| *d).sum();
+            let current_out_node_difference: isize = out_node_differences.values().copied().sum();
+            let current_in_node_difference: isize = in_node_differences.values().copied().sum();
             debug_assert_eq!(-current_out_node_difference, current_in_node_difference);
             debug_assert_eq!(
                 (
-                    out_node_differences.iter().map(|(_, d)| *d).sum::<isize>(),
-                    in_node_differences.iter().map(|(_, d)| *d).sum::<isize>()
+                    out_node_differences.values().copied().sum::<isize>(),
+                    in_node_differences.values().copied().sum::<isize>()
                 ),
                 (-1, 1)
             );
@@ -708,7 +691,7 @@ pub fn write_duplication_bitvector<
             let character = if edge_data.is_original() { '1' } else { '0' };
 
             for _ in 0..edge_data.weight() {
-                write!(writer, "{}", character)?;
+                write!(writer, "{character}")?;
             }
         }
 

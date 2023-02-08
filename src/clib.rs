@@ -351,7 +351,7 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
                 performance_data_type: PerformanceDataType::None,
             },
         ),
-        tig_algorithm => panic!("Unknown tigs algorithm identifier {}", tig_algorithm),
+        tig_algorithm => panic!("Unknown tigs algorithm identifier {tig_algorithm}"),
     };
 
     let mut limit = 0;

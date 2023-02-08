@@ -72,8 +72,6 @@ where
 }
 
 fn compute_matchtigs_choose_heap_type<
-    'a,
-    'b,
     NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
     OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
     SequenceHandle: Default + Clone,
@@ -86,7 +84,7 @@ fn compute_matchtigs_choose_heap_type<
         + Sync,
 >(
     graph: &mut Graph,
-    configuration: &MatchtigAlgorithmConfiguration<'a, 'b>,
+    configuration: &MatchtigAlgorithmConfiguration<'_, '_>,
 ) -> Vec<VecEdgeWalk<Graph>> {
     match configuration.heap_type {
         HeapType::StdBinaryHeap => {
@@ -99,8 +97,6 @@ fn compute_matchtigs_choose_heap_type<
 }
 
 fn compute_matchtigs_choose_node_weight_array_type<
-    'a,
-    'b,
     NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
     OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
     SequenceHandle: Default + Clone,
@@ -114,7 +110,7 @@ fn compute_matchtigs_choose_node_weight_array_type<
     DijkstraHeapType: DijkstraHeap<usize, Graph::NodeIndex>,
 >(
     graph: &mut Graph,
-    configuration: &MatchtigAlgorithmConfiguration<'a, 'b>,
+    configuration: &MatchtigAlgorithmConfiguration<'_, '_>,
 ) -> Vec<VecEdgeWalk<Graph>> {
     match configuration.node_weight_array_type {
         NodeWeightArrayType::EpochNodeWeightArray => {
@@ -136,8 +132,6 @@ fn compute_matchtigs_choose_node_weight_array_type<
 /// The `matcher_path` should point to a [blossom5](https://pub.ist.ac.at/~vnk/software.html) binary.
 /// The `matching_file_prefix` is the name-prefix of the file used to store the matching instance and its result.
 fn compute_matchtigs<
-    'a,
-    'b,
     NodeIndex: GraphIndex<OptionalNodeIndex> + Send + Sync,
     OptionalNodeIndex: OptionalGraphIndex<NodeIndex>,
     SequenceHandle: Default + Clone,
@@ -152,7 +146,7 @@ fn compute_matchtigs<
     DijkstraNodeWeightArray: NodeWeightArray<usize>,
 >(
     graph: &mut Graph,
-    configuration: &MatchtigAlgorithmConfiguration<'a, 'b>,
+    configuration: &MatchtigAlgorithmConfiguration<'_, '_>,
 ) -> Vec<VecEdgeWalk<Graph>> {
     let threads = configuration.threads;
     let k = configuration.k;
@@ -612,12 +606,7 @@ fn compute_matchtigs<
     let matching_node_count = transformed_node_count * 2 + 4 * wcc_amount;
     // two copies of each edge plus the edges connecting the nodes, plus edges from each node to its corresponding extra nodes
     let matching_edge_count = edges.len() * 2 + transformed_node_count + 4 * transformed_node_count;
-    writeln!(
-        output_writer,
-        "{} {}",
-        matching_node_count, matching_edge_count,
-    )
-    .unwrap();
+    writeln!(output_writer, "{matching_node_count} {matching_edge_count}",).unwrap();
 
     let sorted_edges: Vec<_> = edges
         .iter()
@@ -650,7 +639,7 @@ fn compute_matchtigs<
             }
         }
         debug_assert_ne!(n1, n2, "Self loops are not allowed in the matching graph");
-        writeln!(output_writer, "{} {} {}", n1, n2, weight).unwrap();
+        writeln!(output_writer, "{n1} {n2} {weight}").unwrap();
         last_n1 = Some(n1);
     }
 
@@ -802,7 +791,7 @@ fn compute_matchtigs<
         } else if n1 == n2 {
             continue;
         } else {
-            panic!("Edge does not exist: ({}, {})", n1, n2);
+            panic!("Edge does not exist: ({n1}, {n2})");
         };
 
         //debug!("Adding edges ({}, {}) and ({}, {})", original_n1.as_usize(), original_n2.as_usize(), graph.mirror_node(original_n2).unwrap().as_usize(), graph.mirror_node(original_n1).unwrap().as_usize());

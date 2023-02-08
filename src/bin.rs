@@ -495,7 +495,7 @@ pub fn write_walks_fasta<
             first_data.sequence_owned(source_sequence_store);
         let first_data_sequence = first_data_sequence.as_string();
 
-        write!(writer, "{}", first_data_sequence).unwrap();
+        write!(writer, "{first_data_sequence}",).unwrap();
         if let Some(debug_writer) = &mut debug_writer {
             write!(
                 debug_writer,
@@ -685,11 +685,11 @@ pub fn write_walks_gfa<
     let header = if let Some(header) = header {
         header.clone()
     } else {
-        format!("H\tKL:Z:{}", k)
+        format!("H\tKL:Z:{k}")
     };
-    writeln!(writer, "{}", header).unwrap();
+    writeln!(writer, "{header}",).unwrap();
     if let Some(debug_writer) = &mut debug_writer {
-        writeln!(debug_writer, "{}", header).unwrap();
+        writeln!(debug_writer, "{header}",).unwrap();
     }
 
     for (i, walk) in walks.into_iter().enumerate() {
@@ -707,7 +707,7 @@ pub fn write_walks_gfa<
             first_data.sequence_owned(source_sequence_store);
         let first_data_sequence = first_data_sequence.as_string();
 
-        write!(writer, "{}", first_data_sequence).unwrap();
+        write!(writer, "{first_data_sequence}").unwrap();
         if let Some(debug_writer) = &mut debug_writer {
             write!(
                 debug_writer,
