@@ -18,7 +18,7 @@ If you wish to compute matchtigs or Eulertigs from arbitrary input without compu
 
 The matchtigs tool can be installed with the following methods.
 Out of the box, it implements all algorithms but the optimal matchtig algorithm.
-This is because the optimal matchtig algorithm uses the commercial software blossom V, which is free to use for researchers, but cannot be publicly redistributed.
+This is because the optimal matchtig algorithm uses the commercial software blossom V, which is [freely available for researchers](https://pub.ista.ac.at/~vnk/software.html#BLOSSOM5), but cannot be publicly redistributed.
 For all practical purposes, we recommend using greedy matchtigs, as they are a lot more efficient to compute, and have very similar cumulative length and string count as matchtigs (see the matchtigs publication linked below).
 
 ### Installation via [conda/mamba](https://docs.conda.io/en/latest/)
