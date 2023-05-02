@@ -30,7 +30,7 @@ debug = true
 
 [dependencies]
 genome-graph = {version = "5.2.0", features = ["traitgraph-algo"]}
-traitgraph-algo = {version = "5.3.0", features = ["hashbrown_dijkstra_node_weight_array"]}
+traitgraph-algo = {version = "5.4.0", features = ["hashbrown_dijkstra_node_weight_array"]}
 log = "0.4.14"
 simplelog = "0.12.0"
 clap = {version = "4.0.17", features = ["derive", "cargo"]}
@@ -39,6 +39,6 @@ atomic-counter = "1.0.1"
 disjoint-sets = "0.4.2"
 permutation = "0.4.0"
 crossbeam = "0.8.1"
-hashbrown = "0.12.0"
+hashbrown = "0.13.2"
 memory-stats = "1.0.0"
 flate2 = { version = "1.0.24" }
