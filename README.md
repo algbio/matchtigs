@@ -1,5 +1,9 @@
 # Matchtigs & Eulertigs: minimum plain text representation of kmer sets - with and without repetitions
 
+[![Version](https://img.shields.io/crates/v/matchtigs.svg?style=flat-square)](https://crates.io/crates/matchtigs)
+[![Downloads](https://img.shields.io/crates/d/matchtigs.svg?style=flat-square)](https://crates.io/crates/matchtigs)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://docs.rs/matchtigs)
+
 This is an implementation of different algorithms for computing small and minimum plain text representations of kmer sets.
 The algorithms expect unitigs as an input, which can e.g. be computed with [GGCAT](https://github.com/algbio/ggcat) or [BCALM2](https://github.com/GATB/bcalm).
 
