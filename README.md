@@ -37,7 +37,7 @@ mamba install -c conda-forge -c bioconda matchtigs
 
 #### Requirements
 
-Rust `>= 1.60.0`, best installed via [rustup](https://rustup.rs/).
+Rust `>= 1.64.0`, best installed via [rustup](https://rustup.rs/).
 
 #### Installation
 
