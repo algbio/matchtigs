@@ -50,10 +50,9 @@ jobs:
           components: rustfmt, clippy
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: ${{ runner.os }}-${{ matrix.command.name }}-${{ matrix.toolchain }}
-          working-directory: .
 
       - name: ${{matrix.command.name}}
         uses: actions-rs/cargo@v1
@@ -92,10 +91,9 @@ jobs:
           components: rustfmt, clippy
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: ${{ runner.os }}-${{ matrix.command.name }}-${{ matrix.toolchain }}-optional
-          working-directory: .
 
       - name: ${{matrix.command.name}}
         uses: actions-rs/cargo@v1
