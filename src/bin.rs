@@ -891,7 +891,7 @@ fn main() {
             let decoder = BufReader::new(GzDecoder::new(File::open(fa_in).unwrap()));
             read_bigraph_from_fasta_as_edge_centric(decoder, &mut sequence_store, k).unwrap()
         } else {
-            read_bigraph_from_fasta_as_edge_centric_from_file(&fa_in, &mut sequence_store, k)
+            read_bigraph_from_fasta_as_edge_centric_from_file(fa_in, &mut sequence_store, k)
                 .unwrap()
         };
         (graph, k, None)
@@ -902,7 +902,7 @@ fn main() {
             let decoder = BufReader::new(GzDecoder::new(File::open(bcalm_in).unwrap()));
             read_bigraph_from_bcalm2_as_edge_centric(decoder, &mut sequence_store, k).unwrap()
         } else {
-            read_bigraph_from_bcalm2_as_edge_centric_from_file(&bcalm_in, &mut sequence_store, k)
+            read_bigraph_from_bcalm2_as_edge_centric_from_file(bcalm_in, &mut sequence_store, k)
                 .unwrap()
         };
         (graph, k, None)
