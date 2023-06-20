@@ -39,6 +39,6 @@ atomic-counter = "1.0.1"
 disjoint-sets = "0.4.2"
 permutation = "0.4.0"
 crossbeam = "0.8.1"
-hashbrown = "0.13.2"
+hashbrown = "0.14.0"
 memory-stats = "1.0.0"
 flate2 = { version = "1.0.24" }
