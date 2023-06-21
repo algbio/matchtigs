@@ -195,7 +195,7 @@ pub struct Cli {
     log_level: LevelFilter,
 
     /// A value from 0-9 indicating the level of compression used when output.
-    /// 0 means no compression but fast output, while 0 means "take as long as you like".
+    /// 0 means no compression but fast output, while 9 means "take as long as you like".
     /// This only has an effect for output files that end in ".gz".
     #[clap(long, default_value = "6", value_parser = parse_compression_level)]
     compression_level: Compression,
