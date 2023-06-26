@@ -1,6 +1,6 @@
 [package]
 name = "matchtigs"
-version = "2.1.1"
+version = "2.1.2"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 description = "Different algorithms for computing small and minimum plain text representations of kmer sets."
 keywords = ["compression", "plain-text", "kmer", "genome", "bio"]
