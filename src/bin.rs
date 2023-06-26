@@ -113,11 +113,13 @@ pub struct Cli {
 
     /// Compute matchtigs and write them to the given file in GFA format.
     /// If the file ends in '.gz', then it will be gzip-compressed.
+    /// WARNING: Uses `O(|V|^2)` memory.
     #[clap(long)]
     matchtigs_gfa_out: Option<PathBuf>,
 
     /// Compute matchtigs and write them to the given file in fasta format.
     /// If the file ends in '.gz', then it will be gzip-compressed.
+    /// WARNING: Uses `O(|V|^2)` memory.
     #[clap(long)]
     matchtigs_fa_out: Option<PathBuf>,
 
