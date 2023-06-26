@@ -76,7 +76,7 @@ matchtigs --help
 
 **matchtigs (Genome Biology)**
 
-Schmidt, S., Khan, S., Alanko, J., & Tomescu, A. I., Matchtigs: minimum plain text representation of _k_-mer sets. Genome Biology 24, 136 (2023). [10.1186/s13059-023-02968-z](https://doi.org/10.1186/s13059-023-02968-z).
+Schmidt, S., Khan, S., Alanko, J., Pibiri, G. E., and Tomescu, A. I., Matchtigs: minimum plain text representation of _k_-mer sets. Genome Biology 24, 136 (2023). [10.1186/s13059-023-02968-z](https://doi.org/10.1186/s13059-023-02968-z).
 
 **Eulertigs (WABI 2022 best paper award)**
 
