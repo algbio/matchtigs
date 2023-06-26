@@ -14,8 +14,8 @@ If you wish to compute matchtigs or Eulertigs from arbitrary input without compu
 
 ## Features
 
- * Compute [matchtigs and greedy matchtigs](https://doi.org/10.1101/2021.12.15.472871) with multiple threads
- * Compute Eulertigs
+ * Compute [matchtigs and greedy matchtigs](https://doi.org/10.1186/s13059-023-02968-z) with multiple threads
+ * Compute [Eulertigs](https://doi.org/10.4230/LIPIcs.WABI.2022.2)
  * Compute pathtigs (heuristical Eulertigs similar to [ProphAsm](https://doi.org/10.1186/s13059-021-02297-z))
  * Both fasta and GFA format supported, as well as gzip compression if the files end in `.gz`
  * The annotations in a fasta file output by GGCAT (use `-e` flag) or BCALM2 (no flag required) can be used to speed up loading (use `--bcalm-in` instead of `--fasta-in`)
@@ -49,6 +49,8 @@ cargo install matchtigs
 ```
 
 ## Usage
+
+**Note:** Computing minimum matchtigs is requires `O(|V|^2)` memory and is often not feasible in practice. Use greedy matchtigs instead, which are [near-optimal](https://doi.org/10.1186/s13059-023-02968-z).
 
 Computing matchtigs and greedy matchtigs from a fasta file and saving them as GFA (without topology):
 ```bash
