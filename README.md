@@ -72,10 +72,10 @@ matchtigs --help
 
 ## Citation
 
-**matchtigs preprint**
+**matchtigs (Genome Biology)**
 
-Schmidt, S., Khan, S., Alanko, J., & Tomescu, A. I. (2021). Matchtigs: minimum plain text representation of kmer sets. _bioRxiv_. [https://doi.org/10.1101/2021.12.15.472871](https://doi.org/10.1101/2021.12.15.472871).
+Schmidt, S., Khan, S., Alanko, J., & Tomescu, A. I., Matchtigs: minimum plain text representation of _k_-mer sets. Genome Biology 24, 136 (2023). [10.1186/s13059-023-02968-z](https://doi.org/10.1186/s13059-023-02968-z).
 
 **Eulertigs (WABI 2022 best paper award)**
 
-Schmidt, S. and Alanko, J. (2022). Eulertigs: minimum plain text representation of k-mer sets without repetitions in linear time. WABI 2022. [10.4230/LIPIcs.WABI.2022.2](https://doi.org/10.4230/LIPIcs.WABI.2022.2).
+Schmidt, S. and Alanko, J., Eulertigs: minimum plain text representation of k-mer sets without repetitions in linear time. WABI 2022. [10.4230/LIPIcs.WABI.2022.2](https://doi.org/10.4230/LIPIcs.WABI.2022.2).
