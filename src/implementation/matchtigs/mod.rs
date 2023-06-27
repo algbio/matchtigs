@@ -880,8 +880,8 @@ fn compute_matchtigs<
         }
         if longest_dummy_weight > 0 {
             eulerian_cycle.rotate_left(longest_dummy_index);
+            assert!(has_breaking_edge, "Eulerian bicycle contains at least one dummy edge, but no breaking edge");
         }
-        assert!(has_breaking_edge);
 
         let mut offset = 0;
         let mut last_edge_is_dummy = false;
