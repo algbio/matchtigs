@@ -861,6 +861,7 @@ fn main() {
     }
 
     initialise_logging(opts.log_level);
+    info!("Matchtigs version {}", crate_version!());
 
     debug!("Command line options:\n{opts:#?}");
 
