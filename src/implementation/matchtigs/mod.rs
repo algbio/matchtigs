@@ -814,7 +814,7 @@ fn compute_matchtigs<
 
     info!("Inserted {} matched edges", inserted_edges);
     if bidirected_inserted_edges > 0 {
-        warn!("Inserted {} bidirected loops", bidirected_inserted_edges);
+        info!("Inserted {} bidirected loops", bidirected_inserted_edges);
     }
 
     /*for edge_index in graph.edge_indices() {
