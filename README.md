@@ -50,7 +50,7 @@ cargo install matchtigs
 
 ## Usage
 
-**Note:** Computing minimum matchtigs is requires `O(|V|^2)` memory and is often not feasible in practice. Use greedy matchtigs instead, which are [near-optimal](https://doi.org/10.1186/s13059-023-02968-z).
+**Note:** Computing minimum matchtigs requires `O(|V|^2)` memory and is often not feasible in practice. Use greedy matchtigs instead, which are [near-optimal](https://doi.org/10.1186/s13059-023-02968-z).
 
 Computing matchtigs and greedy matchtigs from a fasta file and saving them as GFA (without topology):
 ```bash
