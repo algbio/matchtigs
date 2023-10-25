@@ -654,8 +654,8 @@ pub fn write_duplication_bitvector_to_file<
     SequenceHandle,
     EdgeData: MatchtigEdgeData<SequenceHandle>,
     Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
-    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, Subwalk>,
+    Subwalk: EdgeWalk<Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,
@@ -673,8 +673,8 @@ pub fn write_duplication_bitvector<
     SequenceHandle,
     EdgeData: MatchtigEdgeData<SequenceHandle>,
     Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
-    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, Subwalk>,
+    Subwalk: EdgeWalk<Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,

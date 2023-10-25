@@ -18,8 +18,8 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::index::GraphIndex;
-use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
 use genome_graph::bigraph::traitgraph::interface::StaticGraph;
+use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use genome_graph::bigraph::traitgraph::walks::EdgeWalk;
 use genome_graph::compact_genome::implementation::{DefaultGenome, DefaultSequenceStore};
@@ -266,8 +266,8 @@ impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>>
     }
 
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
+        ResultSequence: OwnedGenomeSequence<AlphabetType, ResultSubsequence>,
+        ResultSubsequence: GenomeSequence<AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
         source_sequence_store: &GenomeSequenceStore,
@@ -358,12 +358,12 @@ pub type CliGraph<GenomeSequenceStoreHandle> =
 pub fn compute_edge_weights<
     NodeData,
     SequenceHandle: HandleWithLength,
-    Graph: StaticGraph<NodeData = NodeData, EdgeData = CliEdgeData<SequenceHandle>>,
+    Graph: DynamicGraph<NodeData = NodeData, EdgeData = CliEdgeData<SequenceHandle>>,
 >(
     graph: &mut Graph,
     k: usize,
 ) {
-    for edge_index in graph.edge_indices() {
+    for edge_index in graph.edge_indices_copied() {
         let edge_data = graph.edge_data_mut(edge_index);
         let weight = edge_data.sequence_handle.len() + 1 - k;
         debug_assert_ne!(
@@ -423,8 +423,8 @@ pub fn write_walks_fasta_to_file<
     GenomeSequenceStore: SequenceStore<AlphabetType>,
     GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
-    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, SubWalk>,
+    SubWalk: EdgeWalk<Graph, SubWalk> + ?Sized,
     WalkSource: IntoIterator<Item = &'ws Walk>,
     OutPath: AsRef<Path>,
     DebugOutPath: AsRef<Path>,
@@ -469,8 +469,8 @@ pub fn write_walks_fasta<
     GenomeSequenceStore: SequenceStore<AlphabetType>,
     GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
-    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, SubWalk>,
+    SubWalk: EdgeWalk<Graph, SubWalk> + ?Sized,
     WalkSource: IntoIterator<Item = &'ws Walk>,
     Writer: Write,
     DebugWriter: Write,
@@ -614,8 +614,8 @@ pub fn write_walks_gfa_to_file<
     GenomeSequenceStore: SequenceStore<AlphabetType>,
     GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
-    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, SubWalk>,
+    SubWalk: EdgeWalk<Graph, SubWalk> + ?Sized,
     WalkSource: IntoIterator<Item = &'ws Walk>,
     OutPath: AsRef<Path>,
     DebugOutPath: AsRef<Path>,
@@ -670,8 +670,8 @@ pub fn write_walks_gfa<
     GenomeSequenceStore: SequenceStore<AlphabetType>,
     GraphEdgeData: MatchtigEdgeData<GenomeSequenceStore::Handle> + SequenceData<AlphabetType, GenomeSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = GraphEdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, SubWalk>,
-    SubWalk: for<'w> EdgeWalk<'w, Graph, SubWalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, SubWalk>,
+    SubWalk: EdgeWalk<Graph, SubWalk> + ?Sized,
     WalkSource: IntoIterator<Item = &'ws Walk>,
     Writer: Write,
     DebugWriter: Write,
@@ -819,8 +819,8 @@ pub fn write_walks_gfa<
 fn debug_print_walks<
     'ws,
     Graph: ImmutableGraphContainer,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
-    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
+    Walk: 'ws + EdgeWalk<Graph, Subwalk>,
+    Subwalk: EdgeWalk<Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     _graph: &Graph,

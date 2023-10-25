@@ -29,12 +29,12 @@ lto = true
 debug = true
 
 [dependencies]
-genome-graph = {version = "6.0.0", features = ["traitgraph-algo"]}
-traitgraph-algo = {version = "6.0.0", features = ["hashbrown_dijkstra_node_weight_array"]}
-log = "0.4.14"
+genome-graph = {version = "8.0.0", features = ["traitgraph-algo"]}
+traitgraph-algo = {version = "8.1.0", features = ["hashbrown_dijkstra_node_weight_array"]}
+log = "0.4.20"
 simplelog = "0.12.0"
-clap = {version = "4.0.17", features = ["derive", "cargo"]}
-itertools = "0.10.3"
+clap = {version = "4.4.7", features = ["derive", "cargo"]}
+itertools = "0.11.0"
 atomic-counter = "1.0.1"
 disjoint-sets = "0.4.2"
 permutation = "0.4.0"
