@@ -29,7 +29,7 @@ lto = true
 debug = true
 
 [dependencies]
-genome-graph = {version = "8.0.0", features = ["traitgraph-algo"]}
+genome-graph = {version = "9.0.0", features = ["traitgraph-algo"]}
 traitgraph-algo = {version = "8.1.0", features = ["hashbrown_dijkstra_node_weight_array"]}
 log = "0.4.20"
 simplelog = "0.12.0"
