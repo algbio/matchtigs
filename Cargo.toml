@@ -10,7 +10,7 @@ documentation = "https://docs.rs/matchtigs"
 homepage = "https://github.com/algbio/matchtigs"
 repository = "https://github.com/algbio/matchtigs"
 edition = "2021"
-rust-version = "1.70.0"
+rust-version = "1.75.0"
 license-file = "LICENSE.txt"
 
 [lib]
