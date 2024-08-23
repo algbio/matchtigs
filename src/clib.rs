@@ -24,8 +24,11 @@ use genome_graph::bigraph::traitgraph::interface::{
 };
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use log::LevelFilter;
-use std::ffi::{CStr, CString, OsString};
+#[cfg(unix)]
+use std::ffi::OsString;
+use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+#[cfg(unix)]
 use std::os::unix::ffi::OsStringExt;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -279,23 +282,38 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
         get_graph().edge_count()
     );
 
-    let matching_file_prefix = PathBuf::from(OsString::from_vec(
-        CString::from({
-            assert!(!matching_file_prefix.is_null());
+    let matching_file_prefix = CString::from({
+        assert!(!matching_file_prefix.is_null());
 
-            CStr::from_ptr(matching_file_prefix)
-        })
-        .into_bytes(),
-    ));
+        CStr::from_ptr(matching_file_prefix)
+    })
+    .into_bytes();
+    let matching_file_prefix = match () {
+        #[cfg(unix)]
+        () => PathBuf::from(OsString::from_vec(matching_file_prefix)),
+        #[cfg(not(unix))]
+        () => PathBuf::from(
+            &std::str::from_utf8(matching_file_prefix.as_slice())
+                .expect("Invalid encoding for matching file prefix"),
+        ),
+    };
 
-    let matcher_path = PathBuf::from(OsString::from_vec(
-        CString::from({
-            assert!(!matcher_path.is_null());
+    let matcher_path = CString::from({
+        assert!(!matcher_path.is_null());
 
-            CStr::from_ptr(matcher_path)
-        })
-        .into_bytes(),
-    ));
+        CStr::from_ptr(matcher_path)
+    })
+    .into_bytes();
+
+    let matcher_path = match () {
+        #[cfg(unix)]
+        () => PathBuf::from(OsString::from_vec(matcher_path)),
+        #[cfg(not(unix))]
+        () => PathBuf::from(
+            &std::str::from_utf8(matcher_path.as_slice())
+                .expect("Invalid encoding for matcher path"),
+        ),
+    };
 
     let tigs_edge_out = {
         assert!(!tigs_edge_out.is_null());
