@@ -1,4 +1,5 @@
 //! Bindings of our algorithms for the C language.
+//!
 //! These allow to pass the graph topology as a list of edges from a node-centric de Bruijn graph.
 //! There is only one global graph that can be controlled via the bindings, no two graphs can be created at the same time.
 //!
@@ -139,6 +140,7 @@ const fn unitig_backward_out_node(unitig: usize) -> usize {
 }
 
 /// Pass an edge to the graph builder.
+///
 /// The edge is from `unitig_a` to `unitig_b`, identified by their id in the closed interval `[0, unitig_amount - 1]`.
 /// The strands indicate that the forward variant of the unitig is incident to the edge if `True`,
 /// and that the reverse complement variant of the unitig is incident to the edge if `False`.
@@ -180,6 +182,7 @@ pub extern "C" fn matchtigs_merge_nodes(
 }
 
 /// Call this after passing all edges with `matchtigs_merge_nodes`.
+///
 /// `unitig_weights` must be an array of length `unitig_amount` containing the number of kmers in each unitig.
 /// The entry at position `i` must belong to the unitig with index `i`.
 ///
@@ -248,6 +251,7 @@ pub unsafe extern "C" fn matchtigs_build_graph(unitig_weights: *const usize) {
 }
 
 /// Compute tigs in the created graph.
+///
 /// Requires that `matchtigs_build_graph` was called before.
 /// The `tig_algorithm` should be `1` for unitigs, `2` for pathtigs (similar to UST-tigs and simplitigs), `3` for eulertigs, `4` for greedy matchtigs and `5` for matchtigs.
 /// `matchtig_file_prefix` must be a path to a file used to communicate with the matcher (blossom5).
