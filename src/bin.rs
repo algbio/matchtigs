@@ -22,8 +22,9 @@ use genome_graph::bigraph::traitgraph::interface::StaticGraph;
 use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::bigraph::traitgraph::traitsequence::interface::Sequence;
 use genome_graph::bigraph::traitgraph::walks::EdgeWalk;
-use genome_graph::compact_genome::implementation::{DefaultGenome, DefaultSequenceStore};
-use genome_graph::compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
+use genome_graph::compact_genome::implementation::{
+    alphabets::dna_alphabet::DnaAlphabet, DefaultGenome, DefaultSequenceStore,
+};
 use genome_graph::compact_genome::interface::alphabet::Alphabet;
 use genome_graph::compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use genome_graph::compact_genome::interface::sequence_store::{HandleWithLength, SequenceStore};
@@ -252,10 +253,10 @@ impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>>
         &self.sequence_handle
     }
 
-    fn sequence_ref<'a>(
-        &self,
-        source_sequence_store: &'a GenomeSequenceStore,
-    ) -> Option<&'a <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef> {
+    fn sequence_ref<'this: 'result, 'store: 'result, 'result>(
+        &'this self,
+        source_sequence_store: &'store GenomeSequenceStore,
+    ) -> Option<&'result <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef> {
         if self.forward {
             let handle =
                 <Self as SequenceData<AlphabetType, GenomeSequenceStore>>::sequence_handle(self);
