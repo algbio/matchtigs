@@ -33,12 +33,12 @@ genome-graph = {version = "9.0.0", features = ["traitgraph-algo"]}
 traitgraph-algo = {version = "8.1.0", features = ["hashbrown_dijkstra_node_weight_array"]}
 log = "0.4.20"
 simplelog = "0.12.0"
-clap = {version = "4.4.7", features = ["derive", "cargo"]}
-itertools = "0.11.0"
+clap = {version = "4.5.17", features = ["derive", "cargo"]}
+itertools = "0.13.0"
 atomic-counter = "1.0.1"
 disjoint-sets = "0.4.2"
 permutation = "0.4.0"
 crossbeam = "0.8.1"
 hashbrown = "0.14.0"
 memory-stats = "1.0.0"
-flate2 = { version = "1.0.24" }
+flate2 = { version = "1.0.33" }
