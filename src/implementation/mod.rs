@@ -169,7 +169,7 @@ pub struct RelaxedAtomicBoolSlice<'a> {
     map: &'a [AtomicBool],
 }
 
-impl<'a> RelaxedAtomicBoolSlice<'a> {
+impl RelaxedAtomicBoolSlice<'_> {
     pub fn set(&self, index: usize, value: bool) {
         self.map[index].store(value, Ordering::Relaxed);
     }

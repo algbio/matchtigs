@@ -1,7 +1,6 @@
 //! Bindings of our algorithms for the C language.
 //!
 //! These allow to pass the graph topology as a list of edges from a node-centric de Bruijn graph.
-//! There is only one global graph that can be controlled via the bindings, no two graphs can be created at the same time.
 //!
 //! WARNING: These functions have not been tested properly and might produce unexpected results.
 
@@ -37,28 +36,10 @@ use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 type MatchtigGraph = PetBigraph<(), ExternalEdgeData>;
 
-static mut GRAPH: Option<MatchtigGraph> = None;
-static mut UNION_FIND: Option<UnionFind> = None;
-
-fn get_graph<'a>() -> &'a mut MatchtigGraph {
-    unsafe {
-        if GRAPH.is_none() {
-            GRAPH = Some(Default::default());
-        }
-
-        GRAPH.as_mut().unwrap()
-    }
-}
-
-#[inline]
-fn get_union_find<'a>() -> &'a mut UnionFind {
-    unsafe {
-        if UNION_FIND.is_none() {
-            UNION_FIND = Some(Default::default());
-        }
-
-        UNION_FIND.as_mut().unwrap()
-    }
+/// The data for building a matchtigs graph.
+pub struct MatchtigsData {
+    graph: MatchtigGraph,
+    union_find: UnionFind,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -108,15 +89,16 @@ impl DijkstraWeightedEdgeData<usize> for ExternalEdgeData {
 #[no_mangle]
 pub extern "C" fn matchtigs_initialise() {
     initialise_logging(LevelFilter::Info);
-    get_graph();
 }
 
 /// Initialise the data structures used to build the graph.
 /// Call this whenever you want to build a new graph.
-/// This replaces the old graph.
 #[no_mangle]
-pub extern "C" fn matchtigs_initialise_graph(unitig_amount: usize) {
-    *get_union_find() = UnionFind::new(unitig_amount * 4);
+pub extern "C" fn matchtigs_initialise_graph(unitig_amount: usize) -> *mut MatchtigsData {
+    Box::leak(Box::new(MatchtigsData {
+        graph: MatchtigGraph::default(),
+        union_find: UnionFind::new(unitig_amount * 4),
+    }))
 }
 
 #[inline]
@@ -145,8 +127,13 @@ const fn unitig_backward_out_node(unitig: usize) -> usize {
 /// The strands indicate that the forward variant of the unitig is incident to the edge if `True`,
 /// and that the reverse complement variant of the unitig is incident to the edge if `False`.
 /// This requires that `matchtigs_initialise_graph` was called before.
+///
+/// # Safety
+///
+/// `matchtigs_data` must be valid.
 #[no_mangle]
-pub extern "C" fn matchtigs_merge_nodes(
+pub unsafe extern "C" fn matchtigs_merge_nodes(
+    matchtigs_data: *mut MatchtigsData,
     unitig_a: usize,
     strand_a: bool,
     unitig_b: usize,
@@ -177,8 +164,9 @@ pub extern "C" fn matchtigs_merge_nodes(
     };
 
     //debug!("Unioning ({}, {}) and ({}, {})", out_a, in_b, mirror_in_a, mirror_out_b);
-    get_union_find().union(out_a, in_b);
-    get_union_find().union(mirror_in_a, mirror_out_b);
+    let matchtigs_data = unsafe { &mut *matchtigs_data };
+    matchtigs_data.union_find.union(out_a, in_b);
+    matchtigs_data.union_find.union(mirror_in_a, mirror_out_b);
 }
 
 /// Call this after passing all edges with `matchtigs_merge_nodes`.
@@ -189,59 +177,79 @@ pub extern "C" fn matchtigs_merge_nodes(
 /// # Safety
 /// Unsafe because it dereferences the given raw pointer, with an offset of up to `unitig_amount - 1`.
 #[no_mangle]
-pub unsafe extern "C" fn matchtigs_build_graph(unitig_weights: *const usize) {
+pub unsafe extern "C" fn matchtigs_build_graph(
+    matchtigs_data: *mut MatchtigsData,
+    unitig_weights: *const usize,
+) {
     let start = Instant::now();
+    let matchtigs_data = unsafe { &mut *matchtigs_data };
 
     let unitig_weights = {
         assert!(!unitig_weights.is_null());
 
-        std::slice::from_raw_parts(unitig_weights, get_union_find().len() / 4)
+        std::slice::from_raw_parts(unitig_weights, matchtigs_data.union_find.len() / 4)
     };
 
-    get_union_find().force();
-    let mut representatives = get_union_find().to_vec();
+    matchtigs_data.union_find.force();
+    let mut representatives = matchtigs_data.union_find.to_vec();
     representatives.sort_unstable();
     representatives.dedup();
 
     for _ in 0..representatives.len() {
-        get_graph().add_node(());
+        matchtigs_data.graph.add_node(());
     }
 
     for (unitig_id, &unitig_weight) in unitig_weights.iter().enumerate() {
         let n1: <MatchtigGraph as GraphBase>::NodeIndex = representatives
-            .binary_search(&get_union_find().find(unitig_forward_in_node(unitig_id)))
+            .binary_search(
+                &matchtigs_data
+                    .union_find
+                    .find(unitig_forward_in_node(unitig_id)),
+            )
             .unwrap()
             .into();
         let n2: <MatchtigGraph as GraphBase>::NodeIndex = representatives
-            .binary_search(&get_union_find().find(unitig_forward_out_node(unitig_id)))
+            .binary_search(
+                &matchtigs_data
+                    .union_find
+                    .find(unitig_forward_out_node(unitig_id)),
+            )
             .unwrap()
             .into();
         let mirror_n2: <MatchtigGraph as GraphBase>::NodeIndex = representatives
-            .binary_search(&get_union_find().find(unitig_backward_in_node(unitig_id)))
+            .binary_search(
+                &matchtigs_data
+                    .union_find
+                    .find(unitig_backward_in_node(unitig_id)),
+            )
             .unwrap()
             .into();
         let mirror_n1: <MatchtigGraph as GraphBase>::NodeIndex = representatives
-            .binary_search(&get_union_find().find(unitig_backward_out_node(unitig_id)))
+            .binary_search(
+                &matchtigs_data
+                    .union_find
+                    .find(unitig_backward_out_node(unitig_id)),
+            )
             .unwrap()
             .into();
 
-        get_graph().set_mirror_nodes(n1, mirror_n1);
-        get_graph().set_mirror_nodes(n2, mirror_n2);
+        matchtigs_data.graph.set_mirror_nodes(n1, mirror_n1);
+        matchtigs_data.graph.set_mirror_nodes(n2, mirror_n2);
 
-        get_graph().add_edge(
+        matchtigs_data.graph.add_edge(
             n1,
             n2,
             ExternalEdgeData::new(unitig_id, true, unitig_weight, 0),
         );
-        get_graph().add_edge(
+        matchtigs_data.graph.add_edge(
             mirror_n2,
             mirror_n1,
             ExternalEdgeData::new(unitig_id, false, unitig_weight, 0),
         );
     }
 
-    assert!(get_graph().verify_node_pairing());
-    assert!(get_graph().verify_edge_mirror_property());
+    assert!(matchtigs_data.graph.verify_node_pairing());
+    assert!(matchtigs_data.graph.verify_edge_mirror_property());
 
     let end = Instant::now();
     info!(
@@ -270,6 +278,7 @@ pub unsafe extern "C" fn matchtigs_build_graph(unitig_weights: *const usize) {
 /// Unsafe because it dereferences the given raw pointers with different offsets.
 #[no_mangle]
 pub unsafe extern "C" fn matchtigs_compute_tigs(
+    matchtigs_data: *mut MatchtigsData,
     tig_algorithm: usize,
     threads: usize,
     k: usize,
@@ -279,11 +288,12 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
     tigs_insert_out: *mut usize,
     tigs_out_limits: *mut usize,
 ) -> usize {
+    let mut matchtigs_data = unsafe { Box::from_raw(matchtigs_data) };
     info!("Computing tigs for k = {} and {} threads", k, threads);
     info!(
         "Graph has {} nodes and {} edges",
-        get_graph().node_count(),
-        get_graph().edge_count()
+        matchtigs_data.graph.node_count(),
+        matchtigs_data.graph.edge_count()
     );
 
     let matching_file_prefix = CString::from({
@@ -322,23 +332,24 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
     let tigs_edge_out = {
         assert!(!tigs_edge_out.is_null());
 
-        std::slice::from_raw_parts_mut(tigs_edge_out, get_graph().edge_count() * 2)
+        std::slice::from_raw_parts_mut(tigs_edge_out, matchtigs_data.graph.edge_count() * 2)
     };
 
     let tigs_insert_out = {
         assert!(!tigs_insert_out.is_null());
 
-        std::slice::from_raw_parts_mut(tigs_insert_out, get_graph().edge_count() * 2)
+        std::slice::from_raw_parts_mut(tigs_insert_out, matchtigs_data.graph.edge_count() * 2)
     };
 
     let tigs_out_limits = {
         assert!(!tigs_out_limits.is_null());
 
-        std::slice::from_raw_parts_mut(tigs_out_limits, get_graph().edge_count())
+        std::slice::from_raw_parts_mut(tigs_out_limits, matchtigs_data.graph.edge_count())
     };
 
     let tigs = match tig_algorithm {
-        1 => get_graph()
+        1 => matchtigs_data
+            .graph
             .edge_indices()
             .filter_map(|e| {
                 if e.as_usize() % 2 == 0 {
@@ -348,10 +359,13 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
                 }
             })
             .collect(),
-        2 => PathtigAlgorithm::compute_tigs(get_graph(), &()),
-        3 => EulertigAlgorithm::compute_tigs(get_graph(), &EulertigAlgorithmConfiguration { k }),
+        2 => PathtigAlgorithm::compute_tigs(&mut matchtigs_data.graph, &()),
+        3 => EulertigAlgorithm::compute_tigs(
+            &mut matchtigs_data.graph,
+            &EulertigAlgorithmConfiguration { k },
+        ),
         4 => MatchtigAlgorithm::compute_tigs(
-            get_graph(),
+            &mut matchtigs_data.graph,
             &MatchtigAlgorithmConfiguration {
                 threads,
                 k,
@@ -362,7 +376,7 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
             },
         ),
         5 => GreedytigAlgorithm::compute_tigs(
-            get_graph(),
+            &mut matchtigs_data.graph,
             &GreedytigAlgorithmConfiguration {
                 threads,
                 k,
@@ -379,7 +393,7 @@ pub unsafe extern "C" fn matchtigs_compute_tigs(
     let mut limit = 0;
     for (i, tig) in tigs.iter().enumerate() {
         for (edge_index, &edge) in tig.iter().enumerate() {
-            let edge_data = get_graph().edge_data(edge);
+            let edge_data = matchtigs_data.graph.edge_data(edge);
             tigs_edge_out[limit + edge_index] =
                 edge_data.unitig_id as isize * if edge_data.is_forwards() { 1 } else { -1 };
             tigs_insert_out[limit + edge_index] = if edge_data.is_original() {
